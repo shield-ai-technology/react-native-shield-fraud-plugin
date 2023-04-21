@@ -47,7 +47,10 @@ const App = () => {
       ShieldFraud.getLatestDeviceResult()
         .then((result: object) => {
           // Handle success with the result object
-          console.log('Received latest device result:', result);
+          if (!successResult) {
+            console.log('Received latest device result:', result);
+            setSuccessResult(JSON.stringify(result, null, 2));
+          }
         })
         .catch((error: object) => {
           // Handle error with the error object
@@ -58,9 +61,11 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome to My App!</Text>
-      <Text style={styles.sessionIdText}>{`session id - ${sessionId}`}</Text>
-      <Text style={styles.successResultText}>{`Result - ${successResult}`}</Text>
+      <View style={styles.terminalContainer}>
+        <Text style={styles.terminalText}>$ Welcome to My App!</Text>
+        <Text style={styles.terminalText}>$ session id - {sessionId}</Text>
+        <Text style={styles.terminalText}>$ Result - {successResult}</Text>
+      </View>
       {/* Additional UI components for your app */}
     </View>
   );
@@ -71,19 +76,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'black', // Set background color to black
   },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
+  terminalContainer: {
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: 'black', // Set background color to black
+    borderWidth: 1,
+    borderColor: 'white', // Set border color to white
+    maxWidth: '80%',
   },
-  sessionIdText: {
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  successResultText: {
+  terminalText: {
+    color: 'white', // Set text color to white
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 8,
   },
 });
 
