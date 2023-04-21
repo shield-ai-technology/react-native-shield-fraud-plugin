@@ -1,0 +1,6 @@
+framework module Pods_ShieldFraudPlugin {
+  umbrella header "Pods-ShieldFraudPlugin-umbrella.h"
+
+  export *
+  module * { export * }
+}

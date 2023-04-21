@@ -1,0 +1,11 @@
+framework module ShieldFraud {
+  umbrella header "ShieldFraud.h"
+
+  export *
+  module * { export * }
+}
+
+module ShieldFraud.Swift {
+  header "ShieldFraud-Swift.h"
+  requires objc
+}

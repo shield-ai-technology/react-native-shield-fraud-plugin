@@ -1,0 +1,207 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target arm64-apple-ios9.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name ShieldFraud
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import AVFoundation
+import AdSupport
+import AppTrackingTransparency
+import SystemConfiguration.CaptiveNetwork
+import CommonCrypto
+import Contacts
+import CoreLocation
+import CoreMotion
+import CoreTelephony
+import Darwin
+import EventKit
+import Foundation
+import LocalAuthentication
+import MachO
+import MessageUI
+import Photos
+import Security
+@_exported import ShieldFraud
+import Swift
+import SystemConfiguration
+import UIKit
+import WebKit
+import _Concurrency
+import _StringProcessing
+import zlib
+@objc public enum RiskStatus : Swift.Int {
+  case allow = 1
+  case review = 2
+  case block = -3
+  case suspend = -4
+  case unknown = -100
+  public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum ReachabilityError : Swift.Error {
+  case failedToCreateWithAddress(Darwin.sockaddr, Swift.Int32)
+  case failedToCreateWithHostname(Swift.String, Swift.Int32)
+  case unableToSetCallback(Swift.Int32)
+  case unableToSetDispatchQueue(Swift.Int32)
+  case unableToGetFlags(Swift.Int32)
+}
+@available(*, unavailable, renamed: "Notification.Name.reachabilityChanged")
+public let ReachabilityChangedNotification: Foundation.NSNotification.Name
+extension Foundation.NSNotification.Name {
+  public static let reachabilityChanged: Foundation.Notification.Name
+}
+public class Reachability {
+  public typealias NetworkReachable = (ShieldFraud.Reachability) -> ()
+  public typealias NetworkUnreachable = (ShieldFraud.Reachability) -> ()
+  @available(*, unavailable, renamed: "Connection")
+  public enum NetworkStatus : Swift.CustomStringConvertible {
+    case notReachable, reachableViaWiFi, reachableViaWWAN
+    public var description: Swift.String {
+      get
+    }
+    public static func == (a: ShieldFraud.Reachability.NetworkStatus, b: ShieldFraud.Reachability.NetworkStatus) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+  public enum Connection : Swift.CustomStringConvertible {
+    case unavailable, wifi, cellular
+    public var description: Swift.String {
+      get
+    }
+    @available(*, deprecated, renamed: "unavailable")
+    public static let none: ShieldFraud.Reachability.Connection
+    public static func == (a: ShieldFraud.Reachability.Connection, b: ShieldFraud.Reachability.Connection) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+  public var whenReachable: ShieldFraud.Reachability.NetworkReachable?
+  public var whenUnreachable: ShieldFraud.Reachability.NetworkUnreachable?
+  @available(*, deprecated, renamed: "allowsCellularConnection")
+  final public let reachableOnWWAN: Swift.Bool
+  public var allowsCellularConnection: Swift.Bool
+  public var notificationCenter: Foundation.NotificationCenter
+  @available(*, deprecated, renamed: "connection.description")
+  public var currentReachabilityString: Swift.String {
+    get
+  }
+  @available(*, unavailable, renamed: "connection")
+  public var currentReachabilityStatus: ShieldFraud.Reachability.Connection {
+    get
+  }
+  public var connection: ShieldFraud.Reachability.Connection {
+    get
+  }
+  required public init(reachabilityRef: SystemConfiguration.SCNetworkReachability, queueQoS: Dispatch.DispatchQoS = .default, targetQueue: Dispatch.DispatchQueue? = nil, notificationQueue: Dispatch.DispatchQueue? = .main)
+  convenience public init(hostname: Swift.String, queueQoS: Dispatch.DispatchQoS = .default, targetQueue: Dispatch.DispatchQueue? = nil, notificationQueue: Dispatch.DispatchQueue? = .main) throws
+  convenience public init(queueQoS: Dispatch.DispatchQoS = .default, targetQueue: Dispatch.DispatchQueue? = nil, notificationQueue: Dispatch.DispatchQueue? = .main) throws
+  @objc deinit
+}
+extension ShieldFraud.Reachability {
+  public func startNotifier() throws
+  public func stopNotifier()
+  @available(*, deprecated, message: "Please use `connection != .none`")
+  public var isReachable: Swift.Bool {
+    get
+  }
+  @available(*, deprecated, message: "Please use `connection == .cellular`")
+  public var isReachableViaWWAN: Swift.Bool {
+    get
+  }
+  @available(*, deprecated, message: "Please use `connection == .wifi`")
+  public var isReachableViaWiFi: Swift.Bool {
+    get
+  }
+  public var description: Swift.String {
+    get
+  }
+}
+public enum CaptchaType {
+  case text_captcha
+  case math_challenge
+  public static func == (a: ShieldFraud.CaptchaType, b: ShieldFraud.CaptchaType) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+@objc public protocol DeviceShieldCallback {
+  @objc func didSuccess(result: [Swift.String : Any])
+  @objc func didError(error: Foundation.NSError)
+}
+@objc @objcMembers public class BlockedDialog : ObjectiveC.NSObject {
+  @objc final public let title: Swift.String
+  @objc final public let body: Swift.String
+  @objc public init(title: Swift.String, body: Swift.String)
+  @objc deinit
+}
+@objc public enum Environment : Swift.Int {
+  case prod, dev, stag
+  public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objc public enum LogLevel : Swift.Int {
+  case debug = 3
+  case info = 2
+  case none = 1
+  public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objc @objcMembers final public class Configuration : ObjectiveC.NSObject {
+  @objc final public var environment: ShieldFraud.Environment
+  @objc final public let siteId: Swift.String
+  @objc final public var logLevel: ShieldFraud.LogLevel
+  @objc final public var deviceShieldCallback: ShieldFraud.DeviceShieldCallback?
+  final public var enableMocking: Swift.Bool?
+  @objc final public var partnerId: Swift.String?
+  @objc final public var debugKey: Swift.String?
+  @objc final public let secretKey: Swift.String
+  @objc final public var defaultBlockedDialog: ShieldFraud.BlockedDialog?
+  @objc public init(withSiteId siteId: Swift.String, secretKey: Swift.String)
+  @objc deinit
+}
+@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers final public class Shield : ObjectiveC.NSObject {
+  @objc final public let sessionId: Swift.String
+  @objc public static func setUp(with configuration: ShieldFraud.Configuration)
+  @objc public static func shared() -> ShieldFraud.Shield
+  @objc deinit
+}
+extension ShieldFraud.Shield {
+  @objc final public func sendAttributes(withScreenName screenName: Swift.String, data: [Swift.String : Swift.String] = [String: String]())
+  @objc final public func sendAttributes(withScreenName screenName: Swift.String, data: [Swift.String : Swift.String] = [String: String](), _ handler: @escaping (Swift.Bool, Foundation.NSError?) -> Swift.Void)
+  @objc final public func getLatestDeviceResult() -> [Swift.String : Any]?
+  @objc final public func getErrorResponse() -> Foundation.NSError?
+  @objc final public func setDeviceResultStateListener(_ isReady: (() -> Swift.Void)?)
+  @objc final public func sendDeviceSignature(withScreenName screenName: Swift.String)
+  @objc final public func sendDeviceSignature(withScreenName screenName: Swift.String, completionHandler: @escaping () -> Swift.Void)
+}
+@objc public protocol DeviceResultStateDelegate {
+  @objc func isReady()
+}
+extension ShieldFraud.RiskStatus : Swift.Equatable {}
+extension ShieldFraud.RiskStatus : Swift.Hashable {}
+extension ShieldFraud.RiskStatus : Swift.RawRepresentable {}
+@available(*, unavailable, renamed: "Connection")
+extension ShieldFraud.Reachability.NetworkStatus : Swift.Equatable {}
+@available(*, unavailable, renamed: "Connection")
+extension ShieldFraud.Reachability.NetworkStatus : Swift.Hashable {}
+extension ShieldFraud.Reachability.Connection : Swift.Equatable {}
+extension ShieldFraud.Reachability.Connection : Swift.Hashable {}
+extension ShieldFraud.CaptchaType : Swift.Equatable {}
+extension ShieldFraud.CaptchaType : Swift.Hashable {}
+extension ShieldFraud.Environment : Swift.Equatable {}
+extension ShieldFraud.Environment : Swift.Hashable {}
+extension ShieldFraud.Environment : Swift.RawRepresentable {}
+extension ShieldFraud.LogLevel : Swift.Equatable {}
+extension ShieldFraud.LogLevel : Swift.Hashable {}
+extension ShieldFraud.LogLevel : Swift.RawRepresentable {}

@@ -1,0 +1,16 @@
+PODS:
+  - ShieldFraud (1.5.24)
+
+DEPENDENCIES:
+  - ShieldFraud
+
+SPEC REPOS:
+  trunk:
+    - ShieldFraud
+
+SPEC CHECKSUMS:
+  ShieldFraud: 83c34e06aca03c764534c25c9e19752ae1837acc
+
+PODFILE CHECKSUM: a5054f2edb3e213ae2ca7daafb855d17cf61674c
+
+COCOAPODS: 1.11.3
