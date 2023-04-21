@@ -1,52 +1,60 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { initShield, getSessionId, Config, LogLevel, EnvironmentInfo } from 'react-native-shield-fraud-plugin';
+import { initShield, Config, LogLevel, EnvironmentInfo, ShieldCallback, getSessionId, sendAttributes, isSDKready, getLatestDeviceResult } from 'react-native-shield-fraud-plugin'; // import the necessary types and functions from the ShieldFraudPlugin module
 
 const App = () => {
-  const [sessionId, setSessionId] = useState('');
+  // Define the callback function
+  const callbacks: ShieldCallback = {
+    onSuccess: (data) => {
+      // Handle success event here
+      console.log('Success:', data);
+    },
+    onFailure: (error) => {
+      // Handle failure event here
+      console.log('Error:', error);
+    },
+  };
 
-  // Define the onSuccess function
-const onSuccess = (data: any) => {
-  console.log('onSuccess:', data);
-};
-
-// Define the onError function
-const onError = (error: any) => {
-  console.log('onError:', error);
-};
+  const config: Config = {
+    siteID: 'dda05c5ddac400e1c133a360e2714aada4cda052',
+    secretKey: '9ce44f88a25272b6d9cbb430ebbcfcf1',
+    blockedDialog: {
+      title: 'Blocked Dialog Title',
+      body: 'Blocked Dialog Body'
+    }, // can be null also depending on your requirement,
+    logLevel: LogLevel.LogLevelInfo,
+    environmentInfo: EnvironmentInfo.EnvironmentProd
+  };
 
   useEffect(() => {
     // Define the Config object
-    const config: Config = {
-      siteID: 'dda05c5ddac400e1c133a360e2714aada4cda052',
-      secretKey: '9ce44f88a25272b6d9cbb430ebbcfcf1',
-      isOptimizedListener: true, // or false, depending on your requirement
-      blockedDialog: {
-        title: 'Blocked Dialog Title',
-        body: 'Blocked Dialog Body'
-      }, // can be null also depending on your requirement,
-      logLevel: LogLevel.LogLevelInfo,
-      environmentInfo: EnvironmentInfo.EnvironmentProd
-    };
+
 
     // Call the initShield function with the Config object
-    initShield(config, onSuccess, onError)
+    initShield(config, callbacks)
+    isSDKready((isReady: boolean) => {
+      console.log('SDK ready:', isReady);
+      // Handle the callback logic here, e.g. dispatch Redux action, update UI state, etc.
+      console.log('session::', getSessionId())
+      sendAttributes('Home Page', { key1: 'value1', key2: 'value2' });
 
-    // Call getSessionId separately after initShield succeeds
-    // getSessionId()
-    //   .then(sessionId => {
-    //     console.log('getSessionId success:', sessionId);
-    //     setSessionId(sessionId); // Update session ID state
-    //   })
-    //   .catch(error => {
-    //     console.error('ShieldFraudReactNativePlugin error:', error);
-    //   });
+
+      getLatestDeviceResult()
+        .then((result: object) => {
+          // Handle success with the result object
+          console.log('Received latest device result:', result);
+        })
+        .catch((error: object) => {
+          // Handle error with the error object
+          console.log('Error retrieving device result:', error);
+        });
+    });
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome to My App!</Text>
-      <Text style={styles.sessionIdText}>Session ID: {sessionId}</Text>
+      <Text style={styles.sessionIdText}>Session ID: </Text>
       {/* Additional UI components for your app */}
     </View>
   );

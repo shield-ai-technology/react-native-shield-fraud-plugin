@@ -21,7 +21,7 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
     
     // Use logLevel parameter as needed
     config.logLevel = logLevel;
-
+    
     config.environment = environmentInfo;
     [Shield setUpWith:config];
 }
@@ -33,19 +33,30 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId) {
 }
 
 // get device result to shield
-RCT_EXPORT_METHOD(getDeviceResult:(RCTResponseSenderBlock)successCallback errorCallback: (RCTResponseSenderBlock)errorCallback)
+RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback errorCallback: (RCTResponseSenderBlock)errorCallback)
 {
-    [[Shield shared] setDeviceResultStateListener:^{ // check whether device result assessment is complete
-        NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
-        if (result != NULL) {
-            successCallback(@[result]);
-        }
-        
-        NSError *error = [[Shield shared] getErrorResponse];
-        if (error != NULL) {
-            errorCallback(@[error]);
-        }
-    }];
+    NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
+    if (result != NULL) {
+        successCallback(@[result]);
+    }
+    
+    NSError *error = [[Shield shared] getErrorResponse];
+    if (error != NULL) {
+        errorCallback(@[error]);
+    }
+}
+
+RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
+{
+    
+    NSTimeInterval delayInSeconds = 2.0;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [[Shield shared] setDeviceResultStateListener:^{
+            NSLog(@"SHIELD_INIT_DONE:: SDK READY");
+            callback(@[]);
+        }];
+    });
 }
 
 - (NSArray<NSString *> *)supportedEvents {
@@ -64,9 +75,7 @@ RCT_EXPORT_METHOD(getDeviceResult:(RCTResponseSenderBlock)successCallback errorC
 
 RCT_EXPORT_METHOD(sendAttributes: (NSString *)screenName data: (NSDictionary *)data)
 {
-    [[Shield shared] setDeviceResultStateListener:^{ // check whether device fingerprinting is completed
-        [[Shield shared] sendAttributesWithScreenName:screenName data:data];
-    }];
+    [[Shield shared] sendAttributesWithScreenName:screenName data:data];
 }
 
 

@@ -9,66 +9,94 @@ const LINKING_ERROR =
 const ShieldFraudPlugin = NativeModules.ShieldFraudPlugin
   ? NativeModules.ShieldFraudPlugin
   : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+    {},
+    {
+      get() {
+        throw new Error(LINKING_ERROR);
+      },
+    }
+  );
 
+const eventEmitter = new NativeEventEmitter(ShieldFraudPlugin);
 
-    const eventEmitter = new NativeEventEmitter(ShieldFraudPlugin);
-    export enum LogLevel {
-      LogLevelDebug = 3,
-      LogLevelInfo = 2,
-      LogLevelNone = 1,
+export enum LogLevel {
+  LogLevelDebug = 3,
+  LogLevelInfo = 2,
+  LogLevelNone = 1,
+}
+
+export enum EnvironmentInfo {
+  EnvironmentProd = 0,
+  EnvironmentDev = 1,
+  EnvironmentStag = 2,
+}
+
+export interface Config {
+  siteID: string;
+  secretKey: string;
+  blockedDialog?: {
+    title: string;
+    body: string;
+  } | null;
+  logLevel: LogLevel;
+  environmentInfo: EnvironmentInfo;
+}
+
+type SuccessCallback = (data: any) => void;
+type FailureCallback = (error: any) => void;
+export type ShieldCallback = {
+  onSuccess?: SuccessCallback;
+  onFailure?: FailureCallback;
+};
+
+export function initShield(config: Config, callbacks?: ShieldCallback): void {
+
+  const isOptimizedListener = !!callbacks; // Set isOptimizedListener to true if callbacks are provided, otherwise false
+  ShieldFraudPlugin.initShield(config.siteID, config.secretKey, isOptimizedListener, config.blockedDialog, config.logLevel, config.environmentInfo);
+
+  if (isOptimizedListener ?? false) {
+    listeners(callbacks);
+  }
+}
+
+function listeners(callbacks?: ShieldCallback): void {
+  eventEmitter.addListener('success', (data) => {
+    if (callbacks?.onSuccess) {
+      callbacks.onSuccess(data);
     }
-    
-    export enum EnvironmentInfo {
-      EnvironmentProd = 0,
-      EnvironmentDev = 1,
-      EnvironmentStag = 2,
+  });
+
+  eventEmitter.addListener('error', (error) => {
+    if (callbacks?.onFailure) {
+      callbacks.onFailure(error);
     }
-    
-    export interface Config {
-      siteID: string;
-      secretKey: string;
-      isOptimizedListener?: boolean;
-      blockedDialog?: {
-        title: string;
-        body: string;
-      } | null;
-      logLevel: LogLevel;
-      environmentInfo: EnvironmentInfo
-    }
-    
-    export function initShield(config: Config, onSuccess?: (data: any) => void, onError?: (error: any) => void): void {
-      ShieldFraudPlugin.initShield(config.siteID, config.secretKey, config.isOptimizedListener, config.blockedDialog, config.logLevel, config.environmentInfo);
-      
-      if (config.isOptimizedListener ?? false) {
-        listeners(onSuccess, onError);
-      }
-    }
-    
-    function listeners(onSuccess?: (data: any) => void, onError?: (error: any) => void): void {
-      eventEmitter.addListener('success', (data) => {
-        if (onSuccess) {
-          onSuccess(data);
-        }
-      });
-    
-      eventEmitter.addListener('error', error => {
-        if (onError) {
-          onError(error);
-        }
-      });
-    }
-    
-    export function getSessionId(): Promise<string> {
-      return ShieldFraudPlugin.getSessionId();
-    }
-    
-    export function sendAttributes(screenName: string, data: object): void {
-      ShieldFraudPlugin.sendAttributes(screenName, data);
-    }
+  });
+}
+
+export function getSessionId(): Promise<string> {
+  return ShieldFraudPlugin.getSessionId();
+}
+
+export function isSDKready(callback: (isReady: boolean) => void): void {
+  ShieldFraudPlugin.setDeviceResultStateListener(() => {
+    // Handle the callback logic here
+    callback(true); // Pass the boolean value indicating SDK is ready
+  });
+}
+
+export function sendAttributes(screenName: string, data: object): void {
+  ShieldFraudPlugin.sendAttributes(screenName, data);
+}
+
+// Define the exported method
+export const getLatestDeviceResult = (): Promise<object> => {
+  return new Promise((resolve, reject) => {
+    ShieldFraudPlugin.getLatestDeviceResult((result: object) => {
+      // Handle success with the result object
+      resolve(result);
+    }, (error: object) => {
+      // Handle error with the error object
+      reject(error);
+    });
+  });
+};
