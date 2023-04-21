@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { initShield, Config, LogLevel, EnvironmentInfo, ShieldCallback, getSessionId, sendAttributes, isSDKready, getLatestDeviceResult } from 'react-native-shield-fraud-plugin'; // import the necessary types and functions from the ShieldFraudPlugin module
+import ShieldFraud, { LogLevel, Config, EnvironmentInfo, ShieldCallback } from 'react-native-shield-fraud-plugin';
 
 const App = () => {
+  const [sessionId, setSessionId] = useState('');
+  const [successResult, setSuccessResult] = useState('');
+
   // Define the callback function
   const callbacks: ShieldCallback = {
     onSuccess: (data) => {
       // Handle success event here
       console.log('Success:', data);
+      setSuccessResult(JSON.stringify(data, null, 2));
     },
     onFailure: (error) => {
       // Handle failure event here
@@ -31,15 +35,16 @@ const App = () => {
 
 
     // Call the initShield function with the Config object
-    initShield(config, callbacks)
-    isSDKready((isReady: boolean) => {
+    ShieldFraud.initShield(config, callbacks)
+    ShieldFraud.isSDKready(async (isReady: boolean) => {
       console.log('SDK ready:', isReady);
-      // Handle the callback logic here, e.g. dispatch Redux action, update UI state, etc.
-      console.log('session::', getSessionId())
-      sendAttributes('Home Page', { key1: 'value1', key2: 'value2' });
+      const sessionID = await ShieldFraud.getSessionId(); // Fetch session ID using await
+      setSessionId(sessionID); // Set session ID to state
+      console.log('session id: ', sessionID);
+      ShieldFraud.sendAttributes('Home Page', { key1: 'value1', key2: 'value2' });
 
 
-      getLatestDeviceResult()
+      ShieldFraud.getLatestDeviceResult()
         .then((result: object) => {
           // Handle success with the result object
           console.log('Received latest device result:', result);
@@ -54,7 +59,8 @@ const App = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome to My App!</Text>
-      <Text style={styles.sessionIdText}>Session ID: </Text>
+      <Text style={styles.sessionIdText}>{`session id - ${sessionId}`}</Text>
+      <Text style={styles.successResultText}>{`Result - ${successResult}`}</Text>
       {/* Additional UI components for your app */}
     </View>
   );
@@ -72,7 +78,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sessionIdText: {
-    fontSize: 18,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  successResultText: {
+    fontSize: 14,
     marginBottom: 16,
   },
 });

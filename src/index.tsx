@@ -1,23 +1,4 @@
-import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
-
-const LINKING_ERROR =
-  `The package 'react-native-shield-fraud-plugin' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
-  '- You rebuilt the app after installing the package\n' +
-  '- You are not using Expo Go\n';
-
-const ShieldFraudPlugin = NativeModules.ShieldFraudPlugin
-  ? NativeModules.ShieldFraudPlugin
-  : new Proxy(
-    {},
-    {
-      get() {
-        throw new Error(LINKING_ERROR);
-      },
-    }
-  );
-
-const eventEmitter = new NativeEventEmitter(ShieldFraudPlugin);
+import { NativeModules, NativeEventEmitter } from 'react-native';
 
 export enum LogLevel {
   LogLevelDebug = 3,
@@ -49,54 +30,65 @@ export type ShieldCallback = {
   onFailure?: FailureCallback;
 };
 
-export function initShield(config: Config, callbacks?: ShieldCallback): void {
+class ShieldFraud {
+  private static PlatformWrapper = NativeModules.ShieldFraudPlugin;
+  private static eventEmitter = new NativeEventEmitter(ShieldFraud.PlatformWrapper);
 
-  const isOptimizedListener = !!callbacks; // Set isOptimizedListener to true if callbacks are provided, otherwise false
-  ShieldFraudPlugin.initShield(config.siteID, config.secretKey, isOptimizedListener, config.blockedDialog, config.logLevel, config.environmentInfo);
+  public static initShield(config: Config, callbacks?: ShieldCallback): void {
+    const isOptimizedListener = !!callbacks;
+    ShieldFraud.PlatformWrapper.initShield(
+      config.siteID,
+      config.secretKey,
+      isOptimizedListener,
+      config.blockedDialog,
+      config.logLevel,
+      config.environmentInfo
+    );
 
-  if (isOptimizedListener ?? false) {
-    listeners(callbacks);
+    if (isOptimizedListener ?? false) {
+      ShieldFraud.listeners(callbacks);
+    }
+  }
+
+  private static listeners(callbacks?: ShieldCallback): void {
+    ShieldFraud.eventEmitter.addListener('success', (data) => {
+      if (callbacks?.onSuccess) {
+        callbacks.onSuccess(data);
+      }
+    });
+
+    ShieldFraud.eventEmitter.addListener('error', (error) => {
+      if (callbacks?.onFailure) {
+        callbacks.onFailure(error);
+      }
+    });
+  }
+
+  public static getSessionId(): Promise<string> {
+    return ShieldFraud.PlatformWrapper.getSessionId();
+  }
+
+  public static isSDKready(callback: (isReady: boolean) => void): void {
+    ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
+      callback(true);
+    });
+  }
+
+  public static sendAttributes(screenName: string, data: object): void {
+    ShieldFraud.PlatformWrapper.sendAttributes(screenName, data);
+  }
+
+  public static getLatestDeviceResult(): Promise<object> {
+    return new Promise((resolve, reject) => {
+      ShieldFraud.PlatformWrapper.getLatestDeviceResult((result: object) => {
+        // Handle success with the result object
+        resolve(result);
+      }, (error: object) => {
+        // Handle error with the error object
+        reject(error);
+      });
+    });
   }
 }
 
-function listeners(callbacks?: ShieldCallback): void {
-  eventEmitter.addListener('success', (data) => {
-    if (callbacks?.onSuccess) {
-      callbacks.onSuccess(data);
-    }
-  });
-
-  eventEmitter.addListener('error', (error) => {
-    if (callbacks?.onFailure) {
-      callbacks.onFailure(error);
-    }
-  });
-}
-
-export function getSessionId(): Promise<string> {
-  return ShieldFraudPlugin.getSessionId();
-}
-
-export function isSDKready(callback: (isReady: boolean) => void): void {
-  ShieldFraudPlugin.setDeviceResultStateListener(() => {
-    // Handle the callback logic here
-    callback(true); // Pass the boolean value indicating SDK is ready
-  });
-}
-
-export function sendAttributes(screenName: string, data: object): void {
-  ShieldFraudPlugin.sendAttributes(screenName, data);
-}
-
-// Define the exported method
-export const getLatestDeviceResult = (): Promise<object> => {
-  return new Promise((resolve, reject) => {
-    ShieldFraudPlugin.getLatestDeviceResult((result: object) => {
-      // Handle success with the result object
-      resolve(result);
-    }, (error: object) => {
-      // Handle error with the error object
-      reject(error);
-    });
-  });
-};
+export default ShieldFraud;
