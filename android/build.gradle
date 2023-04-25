@@ -53,11 +53,22 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+
+  if (isNewArchitectureEnabled()) {
+    react {
+      jsRootDir = file("../src/")
+      libraryName = "ShieldFraudPlugin"
+      codegenJavaPackageName = "com.shieldfraudplugin"
+    }
+  }
 }
 
 repositories {
   mavenCentral()
   google()
+  maven {
+    url "https://cashshield-sdk.s3.amazonaws.com/release/"
+  }
 }
 
 
@@ -66,12 +77,6 @@ dependencies {
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
+  implementation 'com.shield.android:shield-fraud:1.5.+'
 }
 
-if (isNewArchitectureEnabled()) {
-  react {
-    jsRootDir = file("../src/")
-    libraryName = "ShieldFraudPlugin"
-    codegenJavaPackageName = "com.shieldfraudplugin"
-  }
-}
