@@ -68,7 +68,7 @@ class ShieldFraud {
     return ShieldFraud.PlatformWrapper.getSessionId();
   }
 
-  public static isSDKready(callback: (isReady: boolean) => void): void {
+  public static isSDKready(callback: (isReady: boolean) => void): void { //TODO:: rename it to device state listenere
     ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
       callback(true);
     });
