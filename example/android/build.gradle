@@ -13,6 +13,9 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url "https://cashshield-sdk.s3.amazonaws.com/release/"
+        }
     }
     dependencies {
         classpath("com.android.tools.build:gradle:7.3.1")
