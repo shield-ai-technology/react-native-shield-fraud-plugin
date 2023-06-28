@@ -174,7 +174,7 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
   }
 
   @ReactMethod
-  public void getDeviceResult(Callback successCallback, Callback errorCallback) {
+  public void getLatestDeviceResult(Callback successCallback, Callback errorCallback) {
         if (Shield.getInstance().getLatestDeviceResult() != null) {
           JSONObject deviceResult = Shield.getInstance().getLatestDeviceResult();
           successCallback.invoke(deviceResult.toString());
