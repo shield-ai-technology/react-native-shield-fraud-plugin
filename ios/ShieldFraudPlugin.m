@@ -2,28 +2,33 @@
 
 @implementation ShieldFraudPlugin
 
+static BOOL isShieldInitialized = NO;
+
 RCT_EXPORT_MODULE();
 
 RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey isOptimizedListener:(BOOL)isOptimizedListener blockedDialog:(NSDictionary *)blockedDialog logLevel:(NSInteger)logLevel environmentInfo:(NSInteger)environmentInfo)
 {
-    NSLog(@"siteId : %@ and secret key: %@", siteID, secretKey);
-    Configuration *config = [[Configuration alloc] initWithSiteId:siteID secretKey:secretKey];
-    
-    if (isOptimizedListener) {
-        config.deviceShieldCallback = self;
+    if (!isShieldInitialized) {
+        NSLog(@"siteId : %@ and secret key: %@", siteID, secretKey);
+        Configuration *config = [[Configuration alloc] initWithSiteId:siteID secretKey:secretKey];
+        
+        if (isOptimizedListener) {
+            config.deviceShieldCallback = self;
+        }
+        
+        if (blockedDialog != nil) {
+            NSString *title = [blockedDialog objectForKey:@"title"];
+            NSString *body = [blockedDialog objectForKey:@"body"];
+            config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title body:body];
+        }
+        
+        // Use logLevel parameter as needed
+        config.logLevel = logLevel;
+        
+        config.environment = environmentInfo;
+        [Shield setUpWith:config];
+        isShieldInitialized = YES;
     }
-    
-    if (blockedDialog != nil) {
-        NSString *title = [blockedDialog objectForKey:@"title"];
-        NSString *body = [blockedDialog objectForKey:@"body"];
-        config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title body:body];
-    }
-    
-    // Use logLevel parameter as needed
-    config.logLevel = logLevel;
-    
-    config.environment = environmentInfo;
-    [Shield setUpWith:config];
 }
 
 // get session id from shield sdk
