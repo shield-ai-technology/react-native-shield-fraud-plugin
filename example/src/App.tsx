@@ -31,9 +31,6 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Define the Config object
-
-
     // Call the initShield function with the Config object
     ShieldFraud.initShield(config, callbacks)
     ShieldFraud.isSDKready(async (isReady: boolean) => {

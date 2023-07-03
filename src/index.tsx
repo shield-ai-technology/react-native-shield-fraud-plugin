@@ -28,8 +28,8 @@ export interface Config {
     title: string;
     body: string;
   } | null;
-  logLevel: LogLevel;
-  environmentInfo: EnvironmentInfo;
+  logLevel?: LogLevel;
+  environmentInfo?: EnvironmentInfo;
 }
 
 /**
@@ -75,14 +75,20 @@ class ShieldFraud {
   public static initShield(config: Config, callbacks?: ShieldCallback): void {
     const isOptimizedListener = !!callbacks;
 
+      // Set default values if logLevel is not provided
+    const logLevel = config.logLevel || LogLevel.LogLevelNone;
+
+    // Set default values if environmentInfo is not provided
+    const environmentInfo = config.environmentInfo || EnvironmentInfo.EnvironmentProd;
+
     // Call the native method to initialize ShieldFraud with the provided configuration.
     ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
       isOptimizedListener,
       config.blockedDialog,
-      config.logLevel,
-      config.environmentInfo
+      logLevel,
+      environmentInfo
     );
 
     if (isOptimizedListener ?? false) {
