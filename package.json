@@ -51,9 +51,6 @@
     "url": "https://github.com/rajdeepak27/react-native-shield-fraud-plugin/issues"
   },
   "homepage": "https://github.com/rajdeepak27/react-native-shield-fraud-plugin#readme",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
   "devDependencies": {
     "@evilmartians/lefthook": "^1.2.2",
     "@commitlint/config-conventional": "^17.0.2",
