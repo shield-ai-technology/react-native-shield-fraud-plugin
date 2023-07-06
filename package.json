@@ -1,6 +1,6 @@
 {
   "name": "react-native-shield-fraud-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React Native Shield Fraud Plugin helps developers to assess malicious activities performed on mobile devices and return risk intelligence based on user's behaviour. It collects device's fingerprint, social metrics and network information.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -44,13 +44,10 @@
     "device-intelligence",
     "mobile-fingerprint"
   ],
-  "repository": "https://github.com/rajdeepak27/react-native-shield-fraud-plugin",
-  "author": "shield.com <deepakraj.m@shield.com> (https://github.com/rajdeepak27)",
+  "repository": "https://github.com/shield-ai-technology/react-native-shield-fraud-plugin",
+  "author": "www.shield.com",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/rajdeepak27/react-native-shield-fraud-plugin/issues"
-  },
-  "homepage": "https://github.com/rajdeepak27/react-native-shield-fraud-plugin#readme",
+  "homepage": "https://github.com/shield-ai-technology/react-native-shield-fraud-plugin#readme",
   "devDependencies": {
     "@evilmartians/lefthook": "^1.2.2",
     "@commitlint/config-conventional": "^17.0.2",

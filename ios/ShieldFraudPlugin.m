@@ -70,7 +70,8 @@ RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
 
 - (void)didErrorWithError:(NSError *)error
 {
-    [self sendEventWithName:@"error" body: error];
+    NSDictionary *errorInfo = @{@"error": [error localizedDescription]};
+    [self sendEventWithName:@"error" body:errorInfo];
 }
 
 - (void)didSuccessWithResult:(NSDictionary<NSString *,id> *)result
