@@ -9,7 +9,6 @@ RCT_EXPORT_MODULE();
 RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey isOptimizedListener:(BOOL)isOptimizedListener blockedDialog:(NSDictionary *)blockedDialog logLevel:(NSInteger)logLevel environmentInfo:(NSInteger)environmentInfo)
 {
     if (!isShieldInitialized) {
-        NSLog(@"siteId : %@ and secret key: %@", siteID, secretKey);
         Configuration *config = [[Configuration alloc] initWithSiteId:siteID secretKey:secretKey];
         
         if (isOptimizedListener) {
@@ -28,6 +27,7 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
         config.environment = environmentInfo;
         [Shield setUpWith:config];
         isShieldInitialized = YES;
+        NSLog(@"SHIELD:: Init Done");
     }
 }
 
@@ -70,8 +70,7 @@ RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
 
 - (void)didErrorWithError:(NSError *)error
 {
-    NSDictionary *errorInfo = @{@"error": [error localizedDescription]};
-    [self sendEventWithName:@"error" body:errorInfo];
+    [self sendEventWithName:@"error" body:[error localizedDescription]];
 }
 
 - (void)didSuccessWithResult:(NSDictionary<NSString *,id> *)result
@@ -83,8 +82,6 @@ RCT_EXPORT_METHOD(sendAttributes: (NSString *)screenName data: (NSDictionary *)d
 {
     [[Shield shared] sendAttributesWithScreenName:screenName data:data];
 }
-
-
 @end
 
 

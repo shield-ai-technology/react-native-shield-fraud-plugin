@@ -15,8 +15,8 @@ const App = () => {
     },
     onFailure: (error) => {
       // Handle failure event here
-      console.log('Error:', error.error);
-      setSuccessResult(error.error)
+      console.log('Error:', error);
+      setSuccessResult(error)
     },
   };
 
