@@ -72,7 +72,6 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
 
       Shield shield = builder.build();
       Shield.setSingletonInstance(shield);
-      System.out.println("SHIELD:: Init Done");
     }
   }
 
@@ -134,7 +133,6 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
 
   @ReactMethod(isBlockingSynchronousMethod = true)
   public String getSessionId() {
-    System.out.println("SHIELD:: GetSession Id");
     return Shield.getInstance().getSessionId();
   }
 
@@ -168,7 +166,6 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
       @Override
       public void isReady() {
         Shield.getInstance().sendAttributes(screenName, data);
-        System.out.println("the attribteus are sent to the server");
       }
     });
   }

@@ -27,13 +27,11 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
         config.environment = environmentInfo;
         [Shield setUpWith:config];
         isShieldInitialized = YES;
-        NSLog(@"SHIELD:: Init Done");
     }
 }
 
 // get session id from shield sdk
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId) {
-    NSLog(@"SHIELD:: get sessionID");
     return [[Shield shared]sessionId];
 }
 
@@ -58,7 +56,6 @@ RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
         [[Shield shared] setDeviceResultStateListener:^{
-            NSLog(@"SHIELD_INIT_DONE:: SDK READY");
             callback(@[]);
         }];
     });
