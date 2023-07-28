@@ -23,7 +23,6 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
         
         // Use logLevel parameter as needed
         config.logLevel = logLevel;
-        
         config.environment = environmentInfo;
         [Shield setUpWith:config];
         isShieldInitialized = YES;
