@@ -4,7 +4,7 @@ React Native Plugin for Shield Fraud (www.shield.com)
 
 React Native Shield Fraud Plugin helps developers to assess malicious activities performed on mobile devices and return risk intelligence based on user's behaviour. It collects device's fingerprint, social metrics and network information. 
 
-There are four steps to getting started with the SHIELD SDK:
+There are few steps to getting started with the SHIELD SDK:
 
 1. [Integrate the SDK](#integrate-the-sdk)
 
@@ -15,6 +15,9 @@ There are four steps to getting started with the SHIELD SDK:
 4. [Get Device Results](#get-device-results)
 
 5. [Send Custom Attributes](#send-custom-attributes)
+
+6. [Migration from BRIDGE CODE to PLUGIN](#migration-from-bridge-code-to-plugin)
+
 
 
 ### Integrate the SDK
@@ -158,4 +161,56 @@ ShieldFraud.isSDKready(async (isReady: boolean) => {
 }
 ```
 
+### Migration from BRIDGE CODE to PLUGIN
+If you've been using the old method of integrating the React Native bridge code for the Shield Fraud SDK on iOS and Android, follow these steps to migrate to our plugin.
 
+#### iOS Migration Steps
+
+**1. Remove Old Pod Dependency:**
+Open your iOS project's Podfile and remove the line `pod 'ShieldFraud'`. Then, in your project's root directory, run `pod deintegrate` followed by `pod install` to ensure the old ShieldFraud dependency is completely removed.
+
+**2. Remove Old Bridge Code Files:**
+In your Xcode project's file explorer, locate and remove the files `ShieldModule.h` and `ShieldModule.m`. Remove all these references as they are no longer needed.
+
+**3. Clean the Project:**
+Open your Xcode project. Go to `"Product"` in the top menu and select `"Clean Build Folder"` to make sure any residual build artifacts related to the old ShieldFraud library are removed.
+
+**4. Update React Native Project:**
+In your React Native project, search for any code that references the old `ShieldModule`. Remove all these references as they are no longer needed.
+
+**5. Follow Plugin Integration Steps:**
+Now that you've cleaned up the old bridge code, follow the integration steps outlined in the documentation under "Integrate the SDK" section, starting from the step of installing the plugin using npm or yarn.
+
+#### Android Migration Steps
+If you've been using the old method of integrating the React Native bridge code for the Shield Fraud SDK on Android, follow these steps to migrate to our plugin.
+
+**1. Remove Old Dependencies:**
+In your `app/build.gradle` file, locate and remove the line:
+```
+implementation 'com.shield.android:shield-fraud:1.5.+'
+```
+
+**2. Update Android Settings:**
+In your `settings.gradle` or project level `build.gradle` file from the `repositories` block, locate and remove the `maven url`:
+```
+allprojects {
+  repositories {
+    maven {
+      url "https://cashshield-sdk.s3.amazonaws.com/release/"
+    }
+    ...
+  }
+}
+```
+This is the maven url that you no longer need with the new plugin approach.
+
+**3. Remove Old Bridge Code:**
+In your Android project, if you have a ShieldModule.java file as part of the old bridge code integration, you can safely remove it.
+
+**4. Update React Native Project:**
+In your React Native project, search for any code that references the old ShieldModule in Java code. Also remove ShieldModule from ReactPackage, Remove all these references as they are no longer needed.
+
+**5. Follow Plugin Integration Steps:**
+Now that you've cleaned up the old bridge code, follow the integration steps outlined in the documentation under "Integrate the SDK" section, starting from the step of installing the plugin using npm or yarn.
+
+By following these steps, you'll successfully migrate your React Native project from the old bridge code integration to the new Shield Fraud plugin. This migration will make your project more maintainable and allow you to take advantage of the new features and improvements offered by the plugin.
