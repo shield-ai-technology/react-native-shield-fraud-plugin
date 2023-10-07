@@ -127,6 +127,10 @@ class ShieldFraud {
     return ShieldFraud.PlatformWrapper.getSessionId();
   }
 
+  public static isShieldInitialized(): Promise<Boolean> {
+    return ShieldFraud.PlatformWrapper.isShieldInitialized();
+  }
+
   /**
    * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the
    * readiness state.
@@ -134,6 +138,7 @@ class ShieldFraud {
    * @param callback - The callback function to be invoked with the readiness state.
    */
   public static isSDKready(callback: (isReady: boolean) => void): void {
+    if ()
     ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
       callback(true);
     });
@@ -145,7 +150,7 @@ class ShieldFraud {
    * @param screenName - The name of the screen.
    * @param data - The attribute data object.
    */
-  public static sendAttributes(screenName: string, data: object): void {
+  public static sendAttributes(screenName: string, data: object): void {  
     ShieldFraud.PlatformWrapper.sendAttributes(screenName, data);
   }
 

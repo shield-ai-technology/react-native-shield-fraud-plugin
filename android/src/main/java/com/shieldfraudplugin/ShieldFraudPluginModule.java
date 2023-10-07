@@ -42,7 +42,8 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
     return NAME;
   }
 
-  private boolean isShieldInitialized() {
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  public boolean isShieldInitialized() {
     try {
       return Shield.getInstance() != null;
     } catch (IllegalStateException e) {
@@ -121,6 +122,7 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
 
   @ReactMethod
   public void setDeviceResultStateListener(Callback callback) {
+    if (isShieldInitialized()){
     Shield.getInstance().setDeviceResultStateListener(new Shield.DeviceResultStateListener() {
       @Override
       public void isReady() {
@@ -128,6 +130,7 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
         callback.invoke();
       }
     });
+    }
   }
 
 

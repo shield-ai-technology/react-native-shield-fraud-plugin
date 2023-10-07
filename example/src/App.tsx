@@ -32,15 +32,15 @@ const App = () => {
   };
 
   useEffect(() => {
+
     // Call the initShield function with the Config object
-    ShieldFraud.initShield(config, callbacks)
     ShieldFraud.isSDKready(async (isReady: boolean) => {
       console.log('SDK ready:', isReady);
       const sessionID = await ShieldFraud.getSessionId(); // Fetch session ID using await
       setSessionId(sessionID); // Set session ID to state
       console.log('session id: ', sessionID);
       ShieldFraud.sendAttributes('Home Page', { key1: 'value1', key2: 'value2' });
-
+     
 
       ShieldFraud.getLatestDeviceResult()
         .then((result: object) => {
@@ -55,6 +55,9 @@ const App = () => {
           console.log('Error retrieving device result:', error);
         });
     });
+    ShieldFraud.initShield(config, callbacks)
+   
+ 
   }, []);
 
   return (
