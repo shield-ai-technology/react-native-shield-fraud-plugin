@@ -35,7 +35,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId) {
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isShieldInitialized) {
-    return [[Shield shared]isShieldInitialized];
+    return @(isShieldInitialized);
 }
 
 // get device result to shield
@@ -54,16 +54,9 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback 
 
 RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
 {
-    
-    NSTimeInterval delayInSeconds = 2.0;
-    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-         if (isShieldInitialized) {
-        [[Shield shared] setDeviceResultStateListener:^{
-            callback(@[]);
-        }];
-        }
-    });
+    [[Shield shared] setDeviceResultStateListener:^{
+        callback(@[]);
+    }];
 }
 
 - (NSArray<NSString *> *)supportedEvents {

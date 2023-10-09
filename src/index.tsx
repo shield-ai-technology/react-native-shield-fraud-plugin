@@ -75,7 +75,7 @@ class ShieldFraud {
   public static initShield(config: Config, callbacks?: ShieldCallback): void {
     const isOptimizedListener = !!callbacks;
 
-      // Set default values if logLevel is not provided
+    // Set default values if logLevel is not provided
     const logLevel = config.logLevel || LogLevel.LogLevelNone;
 
     // Set default values if environmentInfo is not provided
@@ -127,6 +127,11 @@ class ShieldFraud {
     return ShieldFraud.PlatformWrapper.getSessionId();
   }
 
+  /**
+   * Checks whether the ShieldFraud plugin is initialized.
+   *
+   * @returns A Promise that resolves with a boolean value indicating whether the ShieldFraud plugin is initialized (true) or not (false).
+  */
   public static isShieldInitialized(): Promise<Boolean> {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
   }
@@ -137,11 +142,15 @@ class ShieldFraud {
    *
    * @param callback - The callback function to be invoked with the readiness state.
    */
-  public static isSDKready(callback: (isReady: boolean) => void): void {
-    if ()
-    ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
-      callback(true);
-    });
+  public static async isSDKready(callback: (isReady: boolean) => void): Promise<void> {
+    const isInitialized = await this.isShieldInitialized();
+    if (isInitialized) {
+      ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
+        callback(true);
+      });
+    } else {
+      callback(false);
+    }
   }
 
   /**
@@ -150,7 +159,7 @@ class ShieldFraud {
    * @param screenName - The name of the screen.
    * @param data - The attribute data object.
    */
-  public static sendAttributes(screenName: string, data: object): void {  
+  public static sendAttributes(screenName: string, data: object): void {
     ShieldFraud.PlatformWrapper.sendAttributes(screenName, data);
   }
 
