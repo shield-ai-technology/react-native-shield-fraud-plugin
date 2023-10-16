@@ -72,7 +72,7 @@ class ShieldFraud {
    * @param config - The configuration object containing the required properties.
    * @param callbacks - (Optional) The callback functions for success and failure events.
    */
-  public static initShield(config: Config, callbacks?: ShieldCallback): void {
+  public static async initShield(config: Config, callbacks?: ShieldCallback): Promise<void> {
     const isOptimizedListener = !!callbacks;
 
     // Set default values if logLevel is not provided
@@ -82,7 +82,7 @@ class ShieldFraud {
     const environmentInfo = config.environmentInfo || EnvironmentInfo.EnvironmentProd;
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
-    ShieldFraud.PlatformWrapper.initShield(
+    await ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
       isOptimizedListener,
