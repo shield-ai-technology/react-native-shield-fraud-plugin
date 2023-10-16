@@ -137,32 +137,33 @@ class ShieldFraud {
   }
 
   /**
-   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the
-   * readiness state.
+   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the readiness state.
    *
-   * @param callback - The callback function to be invoked with the readiness state.
-   */
-  public static isSDKready(callback: (isReady: boolean) => void): void {
-    (async () => {
+   * @param callback - A callback function to be invoked with the readiness state.
+   *   - `isReady` (boolean): A boolean value indicating whether the ShieldFraud SDK is ready.
+  */
+  public static async isSDKready(callback: (isReady: boolean) => void): Promise<void> {
+    try {
       const isInitialized = await this.isShieldInitialized();
       
-      if (isInitialized) {
-        const deviceResultListener = (event: { status: string }) => { // Specify the type of 'event'
-          if (event.status === 'isSDKReady') {
-            ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
-            callback(true);
-          }
-        };
-        
-        // Listen for the "isSDKReady" event
-        ShieldFraud.eventEmitter.addListener('device_result_state', deviceResultListener);
-  
-        // Request the SDK readiness status
-        ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
-      } else {
+      if (!isInitialized) {
         callback(false);
+        return;
       }
-    })();
+  
+      const deviceResultListener = (event: { status: string }) => {
+        if (event.status === 'isSDKReady') {
+          ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
+          callback(true);
+        }
+      };
+      
+      ShieldFraud.eventEmitter.addListener('device_result_state', deviceResultListener);
+      ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
+    } catch (error) {
+      console.error("An error occurred:", error);    
+      callback(false); 
+    }
   }
   
 

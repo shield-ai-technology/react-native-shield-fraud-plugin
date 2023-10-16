@@ -53,7 +53,7 @@ const App = () => {
     },
     onFailure: (error) => {
       // Handle failure event here
-      console.log('Error:', error);
+      console.log('Callback Failure:', error);
       setSuccessResult(error)
     },
   };
