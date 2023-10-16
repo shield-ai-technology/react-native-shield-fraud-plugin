@@ -4,10 +4,12 @@ import android.app.Activity;
 
 import androidx.annotation.NonNull;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 
 import com.facebook.react.bridge.Callback;
@@ -121,15 +123,21 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
   }
 
   @ReactMethod
-  public void setDeviceResultStateListener(Callback callback) {
+  public void setDeviceResultStateListener() {
     Shield.getInstance().setDeviceResultStateListener(new Shield.DeviceResultStateListener() {
       @Override
       public void isReady() {
-        // Invoke the callback when the device is ready
-        callback.invoke();
+        // Emit an event when the device is ready
+        WritableMap params = Arguments.createMap();
+        params.putString("status", "isSDKReady");
+
+        reactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit("device_result_state", params);
       }
     });
   }
+
 
 
   @ReactMethod(isBlockingSynchronousMethod = true)
@@ -162,13 +170,7 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
     for (Map.Entry<String, Object> entry : json.toHashMap().entrySet()) {
       data.put(entry.getKey(), (String) entry.getValue());
     }
-    Shield.getInstance().setDeviceResultStateListener(new Shield.DeviceResultStateListener(){
-      // check whether device fingerprinting is completed
-      @Override
-      public void isReady() {
-        Shield.getInstance().sendAttributes(screenName, data);
-      }
-    });
+    Shield.getInstance().sendAttributes(screenName, data);
   }
 
   @ReactMethod

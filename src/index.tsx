@@ -142,16 +142,29 @@ class ShieldFraud {
    *
    * @param callback - The callback function to be invoked with the readiness state.
    */
-  public static async isSDKready(callback: (isReady: boolean) => void): Promise<void> {
-    const isInitialized = await this.isShieldInitialized();
-    if (isInitialized) {
-      ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
-        callback(true);
-      });
-    } else {
-      callback(false);
-    }
+  public static isSDKready(callback: (isReady: boolean) => void): void {
+    (async () => {
+      const isInitialized = await this.isShieldInitialized();
+      
+      if (isInitialized) {
+        const deviceResultListener = (event: { status: string }) => { // Specify the type of 'event'
+          if (event.status === 'isSDKReady') {
+            ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
+            callback(true);
+          }
+        };
+        
+        // Listen for the "isSDKReady" event
+        ShieldFraud.eventEmitter.addListener('device_result_state', deviceResultListener);
+  
+        // Request the SDK readiness status
+        ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
+      } else {
+        callback(false);
+      }
+    })();
   }
+  
 
   /**
    * Sends attributes to the ShieldFraud plugin for a specific screen.
