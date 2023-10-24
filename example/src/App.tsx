@@ -10,34 +10,12 @@ const App = () => {
   const callbacks: ShieldCallback = {
     onSuccess: (data) => {
       // Handle success event here
-      console.log('Success:', data);
+      console.log('Callback Success:', data);
       setSuccessResult(JSON.stringify(data, null, 2));
-
-      ShieldFraud.isSDKready(async (isReady: boolean) => {
-        console.log('SDK ready:', isReady);
-        const sessionID = await ShieldFraud.getSessionId(); // Fetch session ID using await
-        setSessionId(sessionID); // Set session ID to state
-        console.log('session id: ', sessionID);
-        ShieldFraud.sendAttributes('Home Page', { key1: 'value1', key2: 'value2' });
-       
-  
-        ShieldFraud.getLatestDeviceResult()
-          .then((result: object) => {
-            // Handle success with the result object
-            if (!successResult) {
-              console.log('Received latest device result:', result);
-              setSuccessResult(JSON.stringify(result, null, 2));
-            }
-          })
-          .catch((error: object) => {
-            // Handle error with the error object
-            console.log('Error retrieving device result:', error);
-          });
-      });
     },
     onFailure: (error) => {
       // Handle failure event here
-      console.log('Error:', error);
+      console.log('Callback Failure:', error);
       setSuccessResult(error)
     },
   };
@@ -55,7 +33,48 @@ const App = () => {
 
   useEffect(() => {
     // Call the initShield function with the Config object
-    ShieldFraud.initShield(config, callbacks)
+    const initializeShield = async () => {
+      await ShieldFraud.initShield(config, callbacks)
+
+      ShieldFraud.isSDKready(async (isReady: boolean) => {
+        if (isReady) {
+          console.log('SDK ready for sendAttributes:', isReady);
+          ShieldFraud.sendAttributes("Home", { userid: "userid" }); 
+        } else {
+          console.log("SDK is not ready for sendAttributes");
+        }
+      });
+      ShieldFraud.isSDKready(async (isReady: boolean) => {
+        if (isReady) {
+          console.log('SDK ready for sessionID:', isReady);
+          const sessionID = await ShieldFraud.getSessionId(); // Fetch session ID using await
+          setSessionId(sessionID); // Set session ID to state
+        } else {
+          console.log("SDK is not ready for sessionID");
+        }
+      });
+      ShieldFraud.isSDKready(async (isReady: boolean) => {
+        if (isReady) {
+          console.log('SDK ready for getLatestDeviceResult:', isReady);
+          
+          ShieldFraud.getLatestDeviceResult()
+          .then((result: object) => {
+            // Handle success with the result object
+            if (!successResult) {
+              console.log('Received latest device result:', result);
+              setSuccessResult(JSON.stringify(result, null, 2));
+            }
+          })
+          .catch((error: object) => {
+            // Handle error with the error object
+            console.log('Error retrieving device result:', error);
+          });
+        } else {
+          console.log("SDK is not ready for getLatestDeviceResult");
+        }
+      });
+    }
+   initializeShield();
   }, []);
 
   return (

@@ -52,15 +52,15 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback 
     }
 }
 
-RCT_EXPORT_METHOD(setDeviceResultStateListener:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(setDeviceResultStateListener)
 {
     [[Shield shared] setDeviceResultStateListener:^{
-        callback(@[]);
+        [self sendEventWithName:@"device_result_state" body:@{@"status": @"isSDKReady"}];
     }];
 }
 
 - (NSArray<NSString *> *)supportedEvents {
-    return @[@"success", @"error"];
+    return @[@"success", @"error", @"device_result_state"];
 }
 
 - (void)didErrorWithError:(NSError *)error

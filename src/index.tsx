@@ -72,7 +72,7 @@ class ShieldFraud {
    * @param config - The configuration object containing the required properties.
    * @param callbacks - (Optional) The callback functions for success and failure events.
    */
-  public static initShield(config: Config, callbacks?: ShieldCallback): void {
+  public static async initShield(config: Config, callbacks?: ShieldCallback): Promise<void> {
     const isOptimizedListener = !!callbacks;
 
     // Set default values if logLevel is not provided
@@ -82,7 +82,7 @@ class ShieldFraud {
     const environmentInfo = config.environmentInfo || EnvironmentInfo.EnvironmentProd;
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
-    ShieldFraud.PlatformWrapper.initShield(
+    await ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
       isOptimizedListener,
@@ -137,21 +137,35 @@ class ShieldFraud {
   }
 
   /**
-   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the
-   * readiness state.
+   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the readiness state.
    *
-   * @param callback - The callback function to be invoked with the readiness state.
-   */
+   * @param callback - A callback function to be invoked with the readiness state.
+   *   - `isReady` (boolean): A boolean value indicating whether the ShieldFraud SDK is ready.
+  */
   public static async isSDKready(callback: (isReady: boolean) => void): Promise<void> {
-    const isInitialized = await this.isShieldInitialized();
-    if (isInitialized) {
-      ShieldFraud.PlatformWrapper.setDeviceResultStateListener(() => {
-        callback(true);
-      });
-    } else {
-      callback(false);
+    try {
+      const isInitialized = await this.isShieldInitialized();
+      
+      if (!isInitialized) {
+        callback(false);
+        return;
+      }
+  
+      const deviceResultListener = (event: { status: string }) => {
+        if (event.status === 'isSDKReady') {
+          ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
+          callback(true);
+        }
+      };
+      
+      ShieldFraud.eventEmitter.addListener('device_result_state', deviceResultListener);
+      ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
+    } catch (error) {
+      console.error("An error occurred:", error);    
+      callback(false); 
     }
   }
+  
 
   /**
    * Sends attributes to the ShieldFraud plugin for a specific screen.
