@@ -41,13 +41,9 @@ You can refer to the Changelog to see more details about our updates.
 
 ### Initialize the SDK
 
-The SDK initialization should be configured at the earliest of the App Lifecycle to ensure successful generation and processing of the device fingerprint. SDK is to be initialised only once and will throw an exception if it is initialised more than once.
+The SDK initialization should be configured on `useEffect` *(for **Functional Components**)* or `componentDidMount` *(for **Class Components**)* in your **App.tsx** or on **App launch** to ensure successful generation and processing of the device fingerprint. The SDK is to be initialized only once and will throw an exception if it is initialized more than once.
 
-
-You need both the SHIELD_SITE_ID and SHIELD_SECRET_KEY to initialize the SDK. You can locate them at the top of the page.
-
-You can initialize the SDK by calling it inside UseEffect() 
-
+You need both the **SHIELD_SITE_ID** and **SHIELD_SECRET_KEY** to initialize the SDK. You can locate them at the top of the page.
 ```
 const config: Config = {
    siteID: 'SHIELD_SITE_ID',
@@ -55,14 +51,19 @@ const config: Config = {
 };
 
 useEffect(() => {
-    ShieldFraud.initShield(config)
-}
+  const initializeShield = async () => {
+    await ShieldFraud.initShield(config);
+  };
+  
+  initializeShield();
+}, []);
 ```
+**Note** - ```await ShieldFraud.initShield(config)``` - *The await keyword is used to wait for the promise returned by the initShield function to resolve. In React Native, It is best practice to use `await` when calling native modules from React Native, especially during `asynchronous` operations such as SDK Initialization. This is because using `await` ensures that the main thread is not blocked while the native module is initializing.*
 
 `Config` has these **optional** parameters:
 
-1. `logLevel` Set your log level to debug, info or none. | Receives high-level information about how the SDK processes network requests, responses or error information during SDK integration. Default log level is none. 
-2. `environmentInfo` Set your environment info to prod, dev or staging. Default environment info is prod.
+1. `logLevel` Set your log level to `debug`, `info` or `none`. | Receives high-level information about how the SDK processes network requests, responses or error information during SDK integration. Default log level is `none`.
+2. `environmentInfo` Set your environment info to `prod`, `dev` or `staging`. Default environment info is `prod`.
 3. `blockedDialog` Set your dialog for the blocked dialog both title and body or you can send it as null as well 
 
 Note: You can check whether Shield SDK is ready or not by using isSDKready function
@@ -107,7 +108,7 @@ You can register a callback if you would like to be notified in the event that t
 
 Add an additional parameter during intialization in order to register a callback. 
 
-For example - ShieldFraud.initShield(config, **callbacks**);
+**For example - `await ShieldFraud.initShield(config, callbacks);`**
  ```
  const callbacks: ShieldCallback = {
   onSuccess: (data) => {
@@ -125,7 +126,12 @@ const config: Config = {
   secretKey: 'SHIELD_SECRET_KEY'
 };
 
-ShieldFraud.initShield(config, callbacks);
+useEffect(() => {
+  const initializeShield = async () => {
+    await ShieldFraud.initShield(config, callbacks);
+  };
+  initializeShield();
+}, []);
  ```
 
 #### Retrieve device results via Customized Pull
