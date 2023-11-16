@@ -54,10 +54,17 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback 
 
 RCT_EXPORT_METHOD(setDeviceResultStateListener)
 {
-    [[Shield shared] setDeviceResultStateListener:^{
-        [self sendEventWithName:@"device_result_state" body:@{@"status": @"isSDKReady"}];
-    }];
+    double delayInSeconds = 1.5;
+        
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [[Shield shared] setDeviceResultStateListener:^{
+            [self sendEventWithName:@"device_result_state" body:@{@"status": @"isSDKReady"}];
+        }];
+    });
 }
+
 
 - (NSArray<NSString *> *)supportedEvents {
     return @[@"success", @"error", @"device_result_state"];
