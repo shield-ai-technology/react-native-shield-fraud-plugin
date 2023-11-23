@@ -1,6 +1,6 @@
 {
   "name": "react-native-shield-fraud-plugin",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "React Native Shield Fraud Plugin helps developers to assess malicious activities performed on mobile devices and return risk intelligence based on user's behaviour. It collects device's fingerprint, social metrics and network information.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
