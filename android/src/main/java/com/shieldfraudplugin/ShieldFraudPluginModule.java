@@ -180,16 +180,15 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
 
     @ReactMethod
     public void getLatestDeviceResult(Callback successCallback, Callback errorCallback) {
-        if (Shield.getInstance().getLatestDeviceResult() != null) {
-            JSONObject deviceResult = Shield.getInstance().getLatestDeviceResult();
+        Shield shieldInstance = Shield.getInstance();
+        JSONObject deviceResult = shieldInstance.getLatestDeviceResult();
+    
+        if (deviceResult != null) {
             successCallback.invoke(deviceResult.toString());
         } else {
-            ShieldException error = Shield.getInstance().getResponseError();
-            String errorMessage = "unknown error";
-            if (error != null) {
-                errorMessage = error.getMessage();
-            }
+            ShieldException error = shieldInstance.getResponseError();
+            String errorMessage = (error != null) ? error.getMessage() : "unknown error";
             errorCallback.invoke(errorMessage);
         }
-    }
+    } 
 }
