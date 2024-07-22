@@ -191,4 +191,13 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
             errorCallback.invoke(errorMessage);
         }
     } 
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Code to handle adding listeners
+    }
+    
+    @ReactMethod
+    public void removeListeners(int count) {
+        // Code to handle removing listeners
+    }
 }
