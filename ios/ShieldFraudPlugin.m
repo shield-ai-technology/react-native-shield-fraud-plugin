@@ -70,6 +70,14 @@ RCT_EXPORT_METHOD(setDeviceResultStateListener)
     return @[@"success", @"error", @"device_result_state"];
 }
 
+- (void)addListener:(NSString *)eventName {
+  [super addListener:eventName];
+}
+
+- (void)removeListeners:(double)count {
+  [super removeListeners:count];
+}
+
 - (void)didErrorWithError:(NSError *)error
 {
     [self sendEventWithName:@"error" body:[error localizedDescription]];
