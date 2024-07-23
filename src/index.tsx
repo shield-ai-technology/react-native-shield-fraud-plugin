@@ -1,4 +1,4 @@
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import { NativeModules, NativeEventEmitter } from "react-native";
 
 /**
  * Enum representing the log levels for ShieldFraud.
@@ -64,7 +64,9 @@ class ShieldFraud {
   /**
    * The event emitter for listening to success and error events.
    */
-  private static eventEmitter = new NativeEventEmitter(ShieldFraud.PlatformWrapper);
+  private static eventEmitter = new NativeEventEmitter(
+    ShieldFraud.PlatformWrapper
+  );
 
   /**
    * Initializes the ShieldFraud plugin with the provided configuration.
@@ -72,14 +74,18 @@ class ShieldFraud {
    * @param config - The configuration object containing the required properties.
    * @param callbacks - (Optional) The callback functions for success and failure events.
    */
-  public static async initShield(config: Config, callbacks?: ShieldCallback): Promise<void> {
+  public static async initShield(
+    config: Config,
+    callbacks?: ShieldCallback
+  ): Promise<void> {
     const isOptimizedListener = !!callbacks;
 
     // Set default values if logLevel is not provided
     const logLevel = config.logLevel || LogLevel.LogLevelNone;
 
     // Set default values if environmentInfo is not provided
-    const environmentInfo = config.environmentInfo || EnvironmentInfo.EnvironmentProd;
+    const environmentInfo =
+      config.environmentInfo || EnvironmentInfo.EnvironmentProd;
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
@@ -91,7 +97,7 @@ class ShieldFraud {
       environmentInfo
     );
 
-    if (isOptimizedListener ?? false) {
+    if (isOptimizedListener) {
       // Set up listeners for success and error events if callbacks are provided.
       ShieldFraud.listeners(callbacks);
     }
@@ -104,14 +110,14 @@ class ShieldFraud {
    */
   private static listeners(callbacks?: ShieldCallback): void {
     // Listen for success events and invoke the onSuccess callback if provided.
-    ShieldFraud.eventEmitter.addListener('success', (data) => {
+    ShieldFraud.eventEmitter.addListener("success", (data) => {
       if (callbacks?.onSuccess) {
         callbacks.onSuccess(data);
       }
     });
 
     // Listen for error events and invoke the onFailure callback if provided.
-    ShieldFraud.eventEmitter.addListener('error', (error) => {
+    ShieldFraud.eventEmitter.addListener("error", (error) => {
       if (callbacks?.onFailure) {
         callbacks.onFailure(error);
       }
@@ -131,8 +137,8 @@ class ShieldFraud {
    * Checks whether the ShieldFraud plugin is initialized.
    *
    * @returns A Promise that resolves with a boolean value indicating whether the ShieldFraud plugin is initialized (true) or not (false).
-  */
-  public static isShieldInitialized(): Promise<Boolean> {
+   */
+  public static isShieldInitialized(): Promise<boolean> {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
   }
 
@@ -141,31 +147,39 @@ class ShieldFraud {
    *
    * @param callback - A callback function to be invoked with the readiness state.
    *   - `isReady` (boolean): A boolean value indicating whether the ShieldFraud SDK is ready.
-  */
-  public static async isSDKready(callback: (isReady: boolean) => void): Promise<void> {
+   */
+  public static async isSDKready(
+    callback: (isReady: boolean) => void
+  ): Promise<void> {
     try {
+      // Adding a timeout of 100 milliseconds
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const isInitialized = await this.isShieldInitialized();
-      
+
       if (!isInitialized) {
+        console.log("Shield SDK not initialized:");
         callback(false);
         return;
       }
-  
+
       const deviceResultListener = (event: { status: string }) => {
-        if (event.status === 'isSDKReady') {
-          ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
+        if (event.status === "isSDKReady") {
+          ShieldFraud.eventEmitter.removeAllListeners("device_result_state");
           callback(true);
         }
       };
-      
-      ShieldFraud.eventEmitter.addListener('device_result_state', deviceResultListener);
+
+      ShieldFraud.eventEmitter.addListener(
+        "device_result_state",
+        deviceResultListener
+      );
       ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
     } catch (error) {
-      console.error("An error occurred:", error);    
-      callback(false); 
+      console.error("An error occurred:", error);
+      callback(false);
     }
   }
-  
 
   /**
    * Sends attributes to the ShieldFraud plugin for a specific screen.
