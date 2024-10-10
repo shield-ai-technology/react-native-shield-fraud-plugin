@@ -1,4 +1,5 @@
 import { NativeModules, NativeEventEmitter } from "react-native";
+import packageJson from '../package.json';
 
 /**
  * Enum representing the log levels for ShieldFraud.
@@ -86,6 +87,9 @@ class ShieldFraud {
     // Set default values if environmentInfo is not provided
     const environmentInfo =
       config.environmentInfo || EnvironmentInfo.EnvironmentProd;
+    
+    // Set cross-platform parameters internally (React Native and version from package.json)
+    ShieldFraud.setCrossPlatformParameters();
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
@@ -101,6 +105,20 @@ class ShieldFraud {
       // Set up listeners for success and error events if callbacks are provided.
       ShieldFraud.listeners(callbacks);
     }
+  }
+
+  /**
+   * Private method to set cross-platform parameters.
+   * The cross-platform name and the version is fetched from package.json.
+   */
+  private static setCrossPlatformParameters(): void {
+    const crossPlatformName = packageJson.name;
+    const crossPlatformVersion = packageJson.version 
+
+    ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
+      crossPlatformName,
+      crossPlatformVersion
+    );
   }
 
   /**

@@ -80,6 +80,12 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
         }
     }
 
+    @ReactMethod
+    public void setCrossPlatformParameters(String crossPlatformName, String crossPlatformVersion) {
+        ShieldCrossPlatformParams params = new ShieldCrossPlatformParams(crossPlatformName, crossPlatformVersion);
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(params);
+    }
+
     private BlockedDialog getBlockedDialogFromReadableMap(ReadableMap blockedDialog) {
         if (blockedDialog != null) {
             String title = blockedDialog.hasKey("title") ? blockedDialog.getString("title") : null;

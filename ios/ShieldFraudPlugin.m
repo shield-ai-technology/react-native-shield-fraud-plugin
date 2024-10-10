@@ -29,6 +29,14 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
     }
 }
 
+// New method to set cross-platform parameters
+RCT_EXPORT_METHOD(setCrossPlatformParameters:(NSString *)crossPlatformName
+                  crossPlatformVersion:(NSString *)crossPlatformVersion)
+{
+    ShieldCrossPlatformParams *params = [[ShieldCrossPlatformParams alloc] initWithName:crossPlatformName version:crossPlatformVersion];
+    [ShieldCrossPlatformHelper setCrossPlatformParameters:params];
+}
+
 // get session id from shield sdk
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId) {
     return [[Shield shared]sessionId];
