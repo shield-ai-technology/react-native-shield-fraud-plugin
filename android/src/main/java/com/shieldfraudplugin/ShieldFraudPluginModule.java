@@ -21,6 +21,8 @@ import com.shield.android.BlockedDialog;
 import com.shield.android.Shield;
 import com.shield.android.ShieldCallback;
 import com.shield.android.ShieldException;
+import com.shield.android.ShieldCrossPlatformParams;
+import com.shield.android.ShieldCrossPlatformHelper;
 
 import org.json.JSONObject;
 
