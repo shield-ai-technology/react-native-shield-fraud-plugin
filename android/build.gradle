@@ -33,6 +33,11 @@ def getExtOrIntegerDefault(name) {
 android {
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
+  // Conditional for compatibility with AGP <4.2.
+  if (project.android.hasProperty("namespace")) {
+    namespace 'com.shield.android.flutter.plugin_shieldfraud'
+  }
+
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
