@@ -74,6 +74,12 @@ rootProject.allprojects {
   google()
   maven {
     url "https://cashshield-sdk.s3.amazonaws.com/release/"
+    content {
+                // Does only include this group
+                includeGroup "com.shield.android"
+                includeGroup "com.shield.android.module"
+
+            }
   }
   }
 }
