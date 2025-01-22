@@ -146,3 +146,4 @@ package-lock.json
 .metro-health-check*
 .DS_Store
 android/build
+example/ios/Pods

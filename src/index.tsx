@@ -1,5 +1,4 @@
 import { NativeModules, NativeEventEmitter } from "react-native";
-import packageJson from '../package.json';
 
 /**
  * Enum representing the log levels for ShieldFraud.
@@ -112,8 +111,8 @@ class ShieldFraud {
    * The cross-platform name and the version is fetched from package.json.
    */
   private static setCrossPlatformParameters(): void {
-    const crossPlatformName = packageJson.name;
-    const crossPlatformVersion = packageJson.version 
+    const crossPlatformName = "react-native-shield-fraud-plugin";
+    const crossPlatformVersion = "1.0.11"; 
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
