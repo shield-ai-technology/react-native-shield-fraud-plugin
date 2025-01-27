@@ -86,6 +86,9 @@ class ShieldFraud {
     // Set default values if environmentInfo is not provided
     const environmentInfo =
       config.environmentInfo || EnvironmentInfo.EnvironmentProd;
+    
+    // Set cross-platform parameters internally (React Native and version from package.json)
+    ShieldFraud.setCrossPlatformParameters();
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
@@ -101,6 +104,20 @@ class ShieldFraud {
       // Set up listeners for success and error events if callbacks are provided.
       ShieldFraud.listeners(callbacks);
     }
+  }
+
+  /**
+   * Private method to set cross-platform parameters.
+   * The cross-platform name and the version is fetched from package.json.
+   */
+  private static setCrossPlatformParameters(): void {
+    const crossPlatformName = "react-native-shield-fraud-plugin";
+    const crossPlatformVersion = "1.0.11"; 
+
+    ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
+      crossPlatformName,
+      crossPlatformVersion
+    );
   }
 
   /**

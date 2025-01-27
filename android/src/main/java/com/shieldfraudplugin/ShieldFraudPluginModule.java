@@ -21,6 +21,8 @@ import com.shield.android.BlockedDialog;
 import com.shield.android.Shield;
 import com.shield.android.ShieldCallback;
 import com.shield.android.ShieldException;
+import com.shield.android.ShieldCrossPlatformParams;
+import com.shield.android.ShieldCrossPlatformHelper;
 
 import org.json.JSONObject;
 
@@ -78,6 +80,12 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
             Shield shield = builder.build();
             Shield.setSingletonInstance(shield);
         }
+    }
+
+    @ReactMethod
+    public void setCrossPlatformParameters(String crossPlatformName, String crossPlatformVersion) {
+        ShieldCrossPlatformParams params = new ShieldCrossPlatformParams(crossPlatformName, crossPlatformVersion);
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(params);
     }
 
     private BlockedDialog getBlockedDialogFromReadableMap(ReadableMap blockedDialog) {
