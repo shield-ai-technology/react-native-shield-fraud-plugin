@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ShieldFraud, {
   LogLevel,
@@ -11,33 +11,36 @@ const App = () => {
   const [sessionId, setSessionId] = useState('');
   const [successResult, setSuccessResult] = useState('');
 
-  // Define the callback function
-  const callbacks: ShieldCallback = {
-    onSuccess: (data) => {
-      // Handle success event here
-      console.log('Callback Success:', data);
-      setSuccessResult(JSON.stringify(data, null, 2));
-    },
-    onFailure: (error) => {
-      // Handle failure event here
-      console.log('Callback Failure:', error);
-      setSuccessResult(error);
-    },
-  };
-
-  const config: Config = {
-    siteID: 'SHIELD_SITE_ID',
-    secretKey: 'SHIELD_SECRET_KEY',
-    blockedDialog: {
-      title: 'Blocked Dialog Title',
-      body: 'Blocked Dialog Body',
-    }, // can be null also depending on your requirement
-    logLevel: LogLevel.LogLevelInfo,
-    environmentInfo: EnvironmentInfo.EnvironmentProd,
-  };
+  // Ref used inside the effect to check whether a device result has already
+  // been received, without adding successResult to the dependency array
+  // (which would cause the effect to re-run on every result update).
+  const hasResultRef = useRef(false);
 
   useEffect(() => {
-    // Call the initShield function with the Config object
+    // Define config and callbacks inside the effect so they are stable
+    // for this single mount-time run and satisfy exhaustive-deps.
+    const callbacks: ShieldCallback = {
+      onSuccess: (data) => {
+        console.log('Callback Success:', data);
+        setSuccessResult(JSON.stringify(data, null, 2));
+      },
+      onFailure: (error) => {
+        console.log('Callback Failure:', error);
+        setSuccessResult(error);
+      },
+    };
+
+    const config: Config = {
+      siteID: 'SHIELD_SITE_ID',
+      secretKey: 'SHIELD_SECRET_KEY',
+      blockedDialog: {
+        title: 'Blocked Dialog Title',
+        body: 'Blocked Dialog Body',
+      }, // can be null also depending on your requirement
+      logLevel: LogLevel.LogLevelInfo,
+      environmentInfo: EnvironmentInfo.EnvironmentProd,
+    };
+
     const initializeShield = async () => {
       await ShieldFraud.initShield(config, callbacks);
 
@@ -66,14 +69,13 @@ const App = () => {
 
           ShieldFraud.getLatestDeviceResult()
             .then((result: object) => {
-              // Handle success with the result object
-              if (!successResult) {
+              if (!hasResultRef.current) {
+                hasResultRef.current = true;
                 console.log('Received latest device result:', result);
                 setSuccessResult(JSON.stringify(result, null, 2));
               }
             })
             .catch((error: object) => {
-              // Handle error with the error object
               console.log('Error retrieving device result:', error);
             });
         } else {
@@ -81,6 +83,7 @@ const App = () => {
         }
       });
     };
+
     initializeShield();
   }, []);
 
