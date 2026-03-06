@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import ShieldFraud, { LogLevel, Config, EnvironmentInfo, ShieldCallback } from 'react-native-shield-fraud-plugin';
+import ShieldFraud, {
+  LogLevel,
+  Config,
+  EnvironmentInfo,
+  ShieldCallback,
+} from 'react-native-shield-fraud-plugin';
 
 const App = () => {
   const [sessionId, setSessionId] = useState('');
@@ -16,7 +21,7 @@ const App = () => {
     onFailure: (error) => {
       // Handle failure event here
       console.log('Callback Failure:', error);
-      setSuccessResult(error)
+      setSuccessResult(error);
     },
   };
 
@@ -25,56 +30,58 @@ const App = () => {
     secretKey: 'SHIELD_SECRET_KEY',
     blockedDialog: {
       title: 'Blocked Dialog Title',
-      body: 'Blocked Dialog Body'
-    }, // can be null also depending on your requirement,
+      body: 'Blocked Dialog Body',
+    }, // can be null also depending on your requirement
     logLevel: LogLevel.LogLevelInfo,
-    environmentInfo: EnvironmentInfo.EnvironmentProd
+    environmentInfo: EnvironmentInfo.EnvironmentProd,
   };
 
   useEffect(() => {
     // Call the initShield function with the Config object
     const initializeShield = async () => {
-      await ShieldFraud.initShield(config, callbacks)
+      await ShieldFraud.initShield(config, callbacks);
 
       ShieldFraud.isSDKready(async (isReady: boolean) => {
         if (isReady) {
           console.log('SDK ready for sendAttributes:', isReady);
-          ShieldFraud.sendAttributes("Home", { userid: "userid" }); 
+          ShieldFraud.sendAttributes('Home', { userid: 'userid' });
         } else {
-          console.log("SDK is not ready for sendAttributes");
+          console.log('SDK is not ready for sendAttributes');
         }
       });
+
       ShieldFraud.isSDKready(async (isReady: boolean) => {
         if (isReady) {
           console.log('SDK ready for sessionID:', isReady);
-          const sessionID = await ShieldFraud.getSessionId(); // Fetch session ID using await
-          setSessionId(sessionID); // Set session ID to state
+          const sessionID = await ShieldFraud.getSessionId();
+          setSessionId(sessionID);
         } else {
-          console.log("SDK is not ready for sessionID");
+          console.log('SDK is not ready for sessionID');
         }
       });
+
       ShieldFraud.isSDKready(async (isReady: boolean) => {
         if (isReady) {
           console.log('SDK ready for getLatestDeviceResult:', isReady);
-          
+
           ShieldFraud.getLatestDeviceResult()
-          .then((result: object) => {
-            // Handle success with the result object
-            if (!successResult) {
-              console.log('Received latest device result:', result);
-              setSuccessResult(JSON.stringify(result, null, 2));
-            }
-          })
-          .catch((error: object) => {
-            // Handle error with the error object
-            console.log('Error retrieving device result:', error);
-          });
+            .then((result: object) => {
+              // Handle success with the result object
+              if (!successResult) {
+                console.log('Received latest device result:', result);
+                setSuccessResult(JSON.stringify(result, null, 2));
+              }
+            })
+            .catch((error: object) => {
+              // Handle error with the error object
+              console.log('Error retrieving device result:', error);
+            });
         } else {
-          console.log("SDK is not ready for getLatestDeviceResult");
+          console.log('SDK is not ready for getLatestDeviceResult');
         }
       });
-    }
-   initializeShield();
+    };
+    initializeShield();
   }, []);
 
   return (
@@ -94,18 +101,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black', // Set background color to black
+    backgroundColor: 'black',
   },
   terminalContainer: {
     padding: 16,
     borderRadius: 8,
-    backgroundColor: 'black', // Set background color to black
+    backgroundColor: 'black',
     borderWidth: 1,
-    borderColor: 'white', // Set border color to white
+    borderColor: 'white',
     maxWidth: '80%',
   },
   terminalText: {
-    color: 'white', // Set text color to white
+    color: 'white',
     fontSize: 14,
     marginBottom: 8,
   },
