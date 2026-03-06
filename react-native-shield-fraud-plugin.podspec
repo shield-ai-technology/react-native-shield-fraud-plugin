@@ -14,6 +14,10 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/rajdeepak27/react-native-shield-fraud-plugin.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm}"
-  s.dependency "React"
+
+  # install_modules_dependencies handles New Architecture (Turbo Modules / Fabric)
+  # and replaces the legacy `s.dependency "React"` call.
+  install_modules_dependencies(s)
+
   s.dependency "ShieldFraud", ">= 1.5.46"
 end

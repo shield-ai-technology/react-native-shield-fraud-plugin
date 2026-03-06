@@ -10,17 +10,17 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
 {
     if (!isShieldInitialized) {
         Configuration *config = [[Configuration alloc] initWithSiteId:siteID secretKey:secretKey];
-        
+
         if (isOptimizedListener) {
             config.deviceShieldCallback = self;
         }
-        
+
         if (blockedDialog != nil) {
             NSString *title = [blockedDialog objectForKey:@"title"];
             NSString *body = [blockedDialog objectForKey:@"body"];
             config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title body:body];
         }
-        
+
         // Use logLevel parameter as needed
         config.logLevel = logLevel;
         config.environment = environmentInfo;
@@ -37,23 +37,44 @@ RCT_EXPORT_METHOD(setCrossPlatformParameters:(NSString *)crossPlatformName
     [ShieldCrossPlatformHelper setCrossPlatformParameters:params];
 }
 
-// get session id from shield sdk
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId) {
-    return [[Shield shared]sessionId];
+// Synchronous methods:
+// - Old Architecture uses RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD (bridge-only macro).
+// - New Architecture calls these methods directly through the generated spec protocol,
+//   so we expose plain Objective-C methods that return values synchronously.
+#ifdef RCT_NEW_ARCH_ENABLED
+
+- (NSString *)getSessionId
+{
+    return [[Shield shared] sessionId];
 }
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isShieldInitialized) {
+- (BOOL)isShieldInitialized
+{
+    return isShieldInitialized;
+}
+
+#else
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId)
+{
+    return [[Shield shared] sessionId];
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isShieldInitialized)
+{
     return @(isShieldInitialized);
 }
 
-// get device result to shield
-RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback errorCallback: (RCTResponseSenderBlock)errorCallback)
+#endif
+
+// get device result from shield
+RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
     NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
     if (result != NULL) {
         successCallback(@[result]);
     }
-    
+
     NSError *error = [[Shield shared] getErrorResponse];
     if (error != NULL) {
         errorCallback(@[error]);
@@ -63,9 +84,9 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback 
 RCT_EXPORT_METHOD(setDeviceResultStateListener)
 {
     double delayInSeconds = 1.5;
-        
+
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    
+
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
         [[Shield shared] setDeviceResultStateListener:^{
             [self sendEventWithName:@"device_result_state" body:@{@"status": @"isSDKReady"}];
@@ -96,11 +117,20 @@ RCT_EXPORT_METHOD(setDeviceResultStateListener)
     [self sendEventWithName:@"success" body: result];
 }
 
-RCT_EXPORT_METHOD(sendAttributes: (NSString *)screenName data: (NSDictionary *)data)
+RCT_EXPORT_METHOD(sendAttributes:(NSString *)screenName data:(NSDictionary *)data)
 {
     [[Shield shared] sendAttributesWithScreenName:screenName data:data];
 }
+
+#ifdef RCT_NEW_ARCH_ENABLED
+// Required by the New Architecture to wire this Obj-C class into JSI / Turbo Modules.
+// The JSI class name is derived from the codegenConfig "name" in package.json:
+// "RNShieldFraudPluginSpec"  →  NativeShieldFraudPluginSpecJSI
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params
+{
+    return std::make_shared<facebook::react::NativeShieldFraudPluginSpecJSI>(params);
+}
+#endif
+
 @end
-
-
-

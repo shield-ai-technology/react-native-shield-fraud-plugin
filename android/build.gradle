@@ -58,6 +58,18 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+  sourceSets {
+    main {
+      // Select the architecture-specific ShieldFraudPluginSpec shim at build time.
+      // - oldarch: extends ReactContextBaseJavaModule (Old Architecture / bridge)
+      // - newarch: extends the codegen-generated NativeShieldFraudPluginSpec (New Architecture)
+      if (isNewArchitectureEnabled()) {
+        java.srcDirs += ['src/newarch']
+      } else {
+        java.srcDirs += ['src/oldarch']
+      }
+    }
+  }
 
   if (isNewArchitectureEnabled()) {
     react {

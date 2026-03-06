@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
@@ -32,8 +31,16 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * ShieldFraudPlugin native module.
+ *
+ * Extends {@link ShieldFraudPluginSpec}, which is resolved at build time:
+ *  - Old Architecture → ShieldFraudPluginSpec extends ReactContextBaseJavaModule (src/oldarch)
+ *  - New Architecture → ShieldFraudPluginSpec extends the codegen-generated
+ *                       NativeShieldFraudPluginSpec             (src/newarch)
+ */
 @ReactModule(name = ShieldFraudPluginModule.NAME)
-public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implements ShieldCallback<JSONObject> {
+public class ShieldFraudPluginModule extends ShieldFraudPluginSpec implements ShieldCallback<JSONObject> {
     public static final String NAME = "ShieldFraudPlugin";
     private final ReactApplicationContext reactContext;
 
@@ -190,7 +197,7 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
     public void getLatestDeviceResult(Callback successCallback, Callback errorCallback) {
         Shield shieldInstance = Shield.getInstance();
         JSONObject deviceResult = shieldInstance.getLatestDeviceResult();
-    
+
         if (deviceResult != null) {
             successCallback.invoke(deviceResult.toString());
         } else {
@@ -198,14 +205,15 @@ public class ShieldFraudPluginModule extends ReactContextBaseJavaModule implemen
             String errorMessage = (error != null) ? error.getMessage() : "unknown error";
             errorCallback.invoke(errorMessage);
         }
-    } 
+    }
+
     @ReactMethod
     public void addListener(String eventName) {
-        // Code to handle adding listeners
+        // Required for RCTEventEmitter compatibility
     }
-    
+
     @ReactMethod
     public void removeListeners(int count) {
-        // Code to handle removing listeners
+        // Required for RCTEventEmitter compatibility
     }
 }

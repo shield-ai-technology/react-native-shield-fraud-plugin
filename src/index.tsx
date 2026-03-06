@@ -1,4 +1,16 @@
-import { NativeModules, NativeEventEmitter } from "react-native";
+import {
+  NativeModules,
+  NativeEventEmitter,
+  TurboModuleRegistry,
+} from "react-native";
+
+/**
+ * Resolve the native module through TurboModuleRegistry (New Architecture)
+ * with a fallback to NativeModules bridge (Old Architecture).
+ */
+const ShieldFraudPluginNativeModule =
+  TurboModuleRegistry.get<any>("ShieldFraudPlugin") ??
+  NativeModules.ShieldFraudPlugin;
 
 /**
  * Enum representing the log levels for ShieldFraud.
@@ -58,8 +70,10 @@ export type ShieldCallback = {
 class ShieldFraud {
   /**
    * The native module for accessing the ShieldFraudPlugin.
+   * Resolved via TurboModuleRegistry on New Architecture, with
+   * a NativeModules bridge fallback for Old Architecture.
    */
-  private static PlatformWrapper = NativeModules.ShieldFraudPlugin;
+  private static PlatformWrapper = ShieldFraudPluginNativeModule;
 
   /**
    * The event emitter for listening to success and error events.
@@ -112,7 +126,7 @@ class ShieldFraud {
    */
   private static setCrossPlatformParameters(): void {
     const crossPlatformName = "react-native-shield-fraud-plugin";
-    const crossPlatformVersion = "1.0.11"; 
+    const crossPlatformVersion = "1.1.0";
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
