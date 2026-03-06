@@ -21,9 +21,9 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID secretKey:(NSString *)secretKey 
             config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title body:body];
         }
 
-        // Use logLevel parameter as needed
-        config.logLevel = logLevel;
-        config.environment = environmentInfo;
+        // Cast NSInteger → Swift-bridged enum types explicitly
+        config.logLevel = (LogLevel)logLevel;
+        config.environment = (Environment)environmentInfo;
         [Shield setUpWith:config];
         isShieldInitialized = YES;
     }
