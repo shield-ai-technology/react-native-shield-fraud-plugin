@@ -5,7 +5,9 @@
 #import <React/RCTEventEmitter.h>
 #import "RNShieldFraudPluginSpec.h"
 
-@import ShieldFraud;
+// Forward-declare the protocol — the full definition is imported in the .mm file.
+// A forward declaration is sufficient for the @interface conformance declaration.
+@protocol DeviceShieldCallback;
 
 @interface ShieldFraudPlugin : RCTEventEmitter <NativeShieldFraudPluginSpec, DeviceShieldCallback>
 #else
@@ -13,7 +15,8 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 
-@import ShieldFraud;
+// Forward-declare the protocol — full definition imported in the .mm file.
+@protocol DeviceShieldCallback;
 
 @interface ShieldFraudPlugin : RCTEventEmitter <RCTBridgeModule, DeviceShieldCallback>
 #endif
