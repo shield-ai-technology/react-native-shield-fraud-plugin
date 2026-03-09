@@ -30,7 +30,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
  */
 abstract class ShieldFraudPluginSpec extends ReactContextBaseJavaModule {
 
-    ShieldFraudPluginSpec(ReactApplicationContext context) {
+    protected ShieldFraudPluginSpec(ReactApplicationContext context) {
         super(context);
     }
 }

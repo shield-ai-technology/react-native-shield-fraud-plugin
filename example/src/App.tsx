@@ -55,6 +55,26 @@ const App = () => {
 
       ShieldFraud.isSDKready(async (isReady: boolean) => {
         if (isReady) {
+          console.log('SDK ready for sendAttributesWithCallback:', isReady);
+
+          // Use the callback-based API so you can verify success/failure directly
+          // in the sample app console.
+          try {
+            const didSend = await ShieldFraud.sendAttributesWithCallback(
+              'HomeWithCallback',
+              { userid: 'userid-callback' }
+            );
+            console.log('sendAttributesWithCallback success:', didSend);
+          } catch (error: unknown) {
+            console.log('sendAttributesWithCallback failure:', error);
+          }
+        } else {
+          console.log('SDK is not ready for sendAttributesWithCallback');
+        }
+      });
+
+      ShieldFraud.isSDKready(async (isReady: boolean) => {
+        if (isReady) {
           console.log('SDK ready for sessionID:', isReady);
           const sessionID = await ShieldFraud.getSessionId();
           setSessionId(sessionID);
@@ -71,7 +91,7 @@ const App = () => {
             .then((result: object) => {
               if (!hasResultRef.current) {
                 hasResultRef.current = true;
-                console.log('Received latest device result:', result);
+                console.log('Received get latest device result:', result);
                 setSuccessResult(JSON.stringify(result, null, 2));
               }
             })

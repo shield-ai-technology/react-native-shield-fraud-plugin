@@ -1,6 +1,7 @@
 import {
   NativeModules,
   NativeEventEmitter,
+  Platform,
   TurboModuleRegistry,
 } from "react-native";
 
@@ -16,6 +17,7 @@ const ShieldFraudPluginNativeModule =
  * Enum representing the log levels for ShieldFraud.
  */
 export enum LogLevel {
+  LogLevelVerbose = 4,
   LogLevelDebug = 3,
   LogLevelInfo = 2,
   LogLevelNone = 1,
@@ -25,9 +27,9 @@ export enum LogLevel {
  * Enum representing the environment information for ShieldFraud.
  */
 export enum EnvironmentInfo {
-  EnvironmentProd = 0,
-  EnvironmentDev = 1,
-  EnvironmentStag = 2,
+  EnvironmentProd = 0,    // Environment.PROD
+  EnvironmentDev = 1,     // Environment.DEV
+  EnvironmentStaging = 2, // Environment.STAGING
 }
 
 /**
@@ -42,6 +44,12 @@ export interface Config {
   } | null;
   logLevel?: LogLevel;
   environmentInfo?: EnvironmentInfo;
+  /**
+   * Android-only: when true, the Shield SDK will block screen recording
+   * while it is active. Has no effect on iOS (the value is forwarded but
+   * the native side ignores it). Defaults to false when not provided.
+   */
+  blockScreenRecording?: boolean;
 }
 
 /**
@@ -104,14 +112,21 @@ class ShieldFraud {
     // Set cross-platform parameters internally (React Native and version from package.json)
     ShieldFraud.setCrossPlatformParameters();
 
+    // blockScreenRecording is Android-only; iOS native ignores the value.
+    // Always send a real boolean — the Old Arch bridge cannot handle null
+    // for boolean parameters (causes NPE in ReadableNativeArray.getBoolean).
+    const blockScreenRecording =
+      Platform.OS === "android" ? (config.blockScreenRecording ?? false) : false;
+
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
       isOptimizedListener,
-      config.blockedDialog,
+      config.blockedDialog ?? null,
       logLevel,
-      environmentInfo
+      environmentInfo,
+      blockScreenRecording
     );
 
     if (isOptimizedListener) {
@@ -220,6 +235,31 @@ class ShieldFraud {
    */
   public static sendAttributes(screenName: string, data: object): void {
     ShieldFraud.PlatformWrapper.sendAttributes(screenName, data);
+  }
+
+  /**
+   * Sends attributes and resolves with `true` when the native SDK confirms success.
+   *
+   * @param screenName - The name of the screen.
+   * @param data - The attribute data object.
+   * @returns A Promise that resolves to true on success and rejects on error.
+   */
+  public static sendAttributesWithCallback(
+    screenName: string,
+    data: object
+  ): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      ShieldFraud.PlatformWrapper.sendAttributesWithCallback(
+        screenName,
+        data,
+        (result: boolean) => {
+          resolve(!!result);
+        },
+        (error: object) => {
+          reject(error);
+        }
+      );
+    });
   }
 
   /**

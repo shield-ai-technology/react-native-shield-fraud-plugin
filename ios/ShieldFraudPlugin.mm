@@ -39,12 +39,16 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback
     NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
     if (result != NULL) {
         successCallback(@[result]);
+        return;
     }
 
     NSError *error = [[Shield shared] getErrorResponse];
     if (error != NULL) {
-        errorCallback(@[error]);
+        errorCallback(@[[error localizedDescription]]);
+        return;
     }
+
+    errorCallback(@[@"No device result available yet."]);
 }
 
 // Subscribe to real-time device-result state changes
@@ -66,6 +70,28 @@ RCT_EXPORT_METHOD(sendAttributes:(NSString *)screenName
                   data:(NSDictionary *)data)
 {
     [[Shield shared] sendAttributesWithScreenName:screenName data:data];
+}
+
+RCT_EXPORT_METHOD(sendAttributesWithCallback:(NSString *)screenName
+                  data:(NSDictionary *)data
+                  successCallback:(RCTResponseSenderBlock)successCallback
+                  errorCallback:(RCTResponseSenderBlock)errorCallback)
+{
+    [[Shield shared] sendAttributesWithScreenName:screenName
+                                             data:data
+                                                :^(BOOL success, NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (success) {
+                successCallback(@[@(YES)]);
+                return;
+            }
+
+            NSString *errorMessage = error != nil
+                ? [error localizedDescription]
+                : @"Failed to send attributes.";
+            errorCallback(@[errorMessage]);
+        });
+    }];
 }
 
 // RCTEventEmitter — declare the events this module can emit
@@ -126,6 +152,7 @@ isOptimizedListener:(BOOL)isOptimizedListener
      blockedDialog:(NSDictionary * _Nullable)blockedDialog
           logLevel:(double)logLevel
    environmentInfo:(double)environmentInfo
+blockScreenRecording:(BOOL)blockScreenRecording
            resolve:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject
 {
@@ -194,7 +221,8 @@ RCT_EXPORT_METHOD(initShield:(NSString *)siteID
                   isOptimizedListener:(BOOL)isOptimizedListener
                   blockedDialog:(NSDictionary *)blockedDialog
                   logLevel:(NSInteger)logLevel
-                  environmentInfo:(NSInteger)environmentInfo)
+                  environmentInfo:(NSInteger)environmentInfo
+                  blockScreenRecording:(BOOL)blockScreenRecording)
 {
     if (!isShieldInitialized) {
         Configuration *config = [[Configuration alloc] initWithSiteId:siteID
