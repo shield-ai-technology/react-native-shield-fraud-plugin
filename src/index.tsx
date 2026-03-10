@@ -141,7 +141,7 @@ class ShieldFraud {
    */
   private static setCrossPlatformParameters(): void {
     const crossPlatformName = "react-native-shield-fraud-plugin";
-    const crossPlatformVersion = "1.1.0";
+    const crossPlatformVersion = "2.0.0";
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
