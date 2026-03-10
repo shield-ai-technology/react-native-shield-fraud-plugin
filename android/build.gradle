@@ -15,9 +15,6 @@ def isNewArchitectureEnabled() {
 
 apply plugin: "com.android.library"
 
-
-def appProject = rootProject.allprojects.find { it.plugins.hasPlugin('com.android.application') }
-
 if (isNewArchitectureEnabled()) {
   apply plugin: "com.facebook.react"
 }
@@ -43,6 +40,7 @@ android {
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
   }
+
   buildTypes {
     release {
       minifyEnabled false
@@ -58,6 +56,18 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+  sourceSets {
+    main {
+      // Select the architecture-specific ShieldFraudPluginSpec shim at build time.
+      // - oldarch: extends ReactContextBaseJavaModule (Old Architecture / bridge)
+      // - newarch: extends the codegen-generated NativeShieldFraudPluginSpec (New Architecture)
+      if (isNewArchitectureEnabled()) {
+        java.srcDirs += ['src/newarch']
+      } else {
+        java.srcDirs += ['src/oldarch']
+      }
+    }
+  }
 
   if (isNewArchitectureEnabled()) {
     react {
@@ -70,27 +80,24 @@ android {
 
 rootProject.allprojects {
   repositories {
-  mavenCentral()
-  google()
-  maven {
-    url "https://cashshield-sdk.s3.amazonaws.com/release/"
-    content {
-                // Does only include this group
-                includeGroup "com.shield.android"
-                includeGroup "com.shield.android.module"
-
-            }
-  }
+    mavenCentral()
+    google()
+    maven {
+      url "https://cashshield-sdk.s3.amazonaws.com/release/"
+      content {
+        includeGroup "com.shield.android"
+        includeGroup "com.shield.android.module"
+      }
+    }
   }
 }
-
-
 
 dependencies {
   // For < 0.71, this will be from the local maven repo
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
-  implementation 'com.shield.android:shield-fraud:1.6.+'
-}
 
+  // Shield Fraud SDK 2.x — factory-based init, callback-based device intelligence
+  implementation 'com.shield.android:shield-fraud:2.4.0'
+}

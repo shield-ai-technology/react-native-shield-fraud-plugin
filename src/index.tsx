@@ -1,9 +1,23 @@
-import { NativeModules, NativeEventEmitter } from "react-native";
+import {
+  NativeModules,
+  NativeEventEmitter,
+  Platform,
+  TurboModuleRegistry,
+} from "react-native";
+
+/**
+ * Resolve the native module through TurboModuleRegistry (New Architecture)
+ * with a fallback to NativeModules bridge (Old Architecture).
+ */
+const ShieldFraudPluginNativeModule =
+  TurboModuleRegistry.get<any>("ShieldFraudPlugin") ??
+  NativeModules.ShieldFraudPlugin;
 
 /**
  * Enum representing the log levels for ShieldFraud.
  */
 export enum LogLevel {
+  LogLevelVerbose = 4,
   LogLevelDebug = 3,
   LogLevelInfo = 2,
   LogLevelNone = 1,
@@ -13,9 +27,9 @@ export enum LogLevel {
  * Enum representing the environment information for ShieldFraud.
  */
 export enum EnvironmentInfo {
-  EnvironmentProd = 0,
-  EnvironmentDev = 1,
-  EnvironmentStag = 2,
+  EnvironmentProd = 0,    // Environment.PROD
+  EnvironmentDev = 1,     // Environment.DEV
+  EnvironmentStaging = 2, // Environment.STAGING
 }
 
 /**
@@ -30,6 +44,12 @@ export interface Config {
   } | null;
   logLevel?: LogLevel;
   environmentInfo?: EnvironmentInfo;
+  /**
+   * Android-only: when true, the Shield SDK will block screen recording
+   * while it is active. Has no effect on iOS (the value is forwarded but
+   * the native side ignores it). Defaults to false when not provided.
+   */
+  blockScreenRecording?: boolean;
 }
 
 /**
@@ -58,8 +78,10 @@ export type ShieldCallback = {
 class ShieldFraud {
   /**
    * The native module for accessing the ShieldFraudPlugin.
+   * Resolved via TurboModuleRegistry on New Architecture, with
+   * a NativeModules bridge fallback for Old Architecture.
    */
-  private static PlatformWrapper = NativeModules.ShieldFraudPlugin;
+  private static PlatformWrapper = ShieldFraudPluginNativeModule;
 
   /**
    * The event emitter for listening to success and error events.
@@ -90,14 +112,21 @@ class ShieldFraud {
     // Set cross-platform parameters internally (React Native and version from package.json)
     ShieldFraud.setCrossPlatformParameters();
 
+    // blockScreenRecording is Android-only; iOS native ignores the value.
+    // Always send a real boolean — the Old Arch bridge cannot handle null
+    // for boolean parameters (causes NPE in ReadableNativeArray.getBoolean).
+    const blockScreenRecording =
+      Platform.OS === "android" ? (config.blockScreenRecording ?? false) : false;
+
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
       isOptimizedListener,
-      config.blockedDialog,
+      config.blockedDialog ?? null,
       logLevel,
-      environmentInfo
+      environmentInfo,
+      blockScreenRecording
     );
 
     if (isOptimizedListener) {
@@ -112,7 +141,7 @@ class ShieldFraud {
    */
   private static setCrossPlatformParameters(): void {
     const crossPlatformName = "react-native-shield-fraud-plugin";
-    const crossPlatformVersion = "1.0.11"; 
+    const crossPlatformVersion = "1.1.0";
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
@@ -160,14 +189,25 @@ class ShieldFraud {
   }
 
   /**
-   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the readiness state.
+   * iOS only — checks if the ShieldFraud SDK is ready and invokes the provided
+   * callback with the readiness state.
+   *
+   * On Android (SDK 2.x) device result events fire automatically via the
+   * Sentinel inside createShieldWithCallback. There is no subscription call
+   * and no reliable way to intercept the event after the fact, so this method
+   * is a no-op on Android. Use the `callbacks` parameter of `initShield`
+   * instead to receive device results on Android.
    *
    * @param callback - A callback function to be invoked with the readiness state.
-   *   - `isReady` (boolean): A boolean value indicating whether the ShieldFraud SDK is ready.
+   *   - `isReady` (boolean): true when the SDK has produced a device result.
    */
   public static async isSDKready(
     callback: (isReady: boolean) => void
   ): Promise<void> {
+    if (Platform.OS !== "ios") {
+      return;
+    }
+
     try {
       // Adding a timeout of 100 milliseconds
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -191,6 +231,8 @@ class ShieldFraud {
         "device_result_state",
         deviceResultListener
       );
+
+      // Trigger the SDK subscription — iOS 1.x requires this explicit call.
       ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
     } catch (error) {
       console.error("An error occurred:", error);
@@ -209,6 +251,31 @@ class ShieldFraud {
   }
 
   /**
+   * Sends attributes and resolves with `true` when the native SDK confirms success.
+   *
+   * @param screenName - The name of the screen.
+   * @param data - The attribute data object.
+   * @returns A Promise that resolves to true on success and rejects on error.
+   */
+  public static sendAttributesWithCallback(
+    screenName: string,
+    data: object
+  ): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      ShieldFraud.PlatformWrapper.sendAttributesWithCallback(
+        screenName,
+        data,
+        (result: boolean) => {
+          resolve(!!result);
+        },
+        (error: object) => {
+          reject(error);
+        }
+      );
+    });
+  }
+
+  /**
    * Retrieves the latest device result from the ShieldFraud plugin.
    *
    * @returns A Promise that resolves with the latest device result object.
@@ -217,11 +284,31 @@ class ShieldFraud {
     return new Promise((resolve, reject) => {
       ShieldFraud.PlatformWrapper.getLatestDeviceResult(
         (result: object) => {
-          // Handle success with the result object
           resolve(result);
         },
         (error: object) => {
-          // Handle error with the error object
+          reject(error);
+        }
+      );
+    });
+  }
+
+  /**
+   * Triggers a device signature computation for a given screen name.
+   * On success, resolves with the latest device result object.
+   * On failure, rejects with the error message.
+   *
+   * @param screenName - The name of the screen triggering the signature.
+   * @returns A Promise that resolves with the device result or rejects with an error.
+   */
+  public static sendDeviceSignature(screenName: string): Promise<object> {
+    return new Promise((resolve, reject) => {
+      ShieldFraud.PlatformWrapper.sendDeviceSignature(
+        screenName,
+        (result: object) => {
+          resolve(result);
+        },
+        (error: string) => {
           reject(error);
         }
       );
