@@ -16,7 +16,9 @@ export interface Spec extends TurboModule {
     isOptimizedListener: boolean,
     blockedDialog: Object | null,
     logLevel: number,
-    environmentInfo: number
+    environmentInfo: number,
+    /** Android-only: block screen recording while the SDK is active. Ignored on iOS. */
+    blockScreenRecording: boolean
   ): Promise<void>;
 
   /**
@@ -46,6 +48,16 @@ export interface Spec extends TurboModule {
    * Sends custom attributes for a given screen name.
    */
   sendAttributes(screenName: string, data: Object): void;
+
+  /**
+   * Sends custom attributes for a given screen name with success/error callbacks.
+   */
+  sendAttributesWithCallback(
+    screenName: string,
+    data: Object,
+    successCallback: (result: boolean) => void,
+    errorCallback: (error: string) => void
+  ): void;
 
   /**
    * Retrieves the latest device result via success/error callbacks.

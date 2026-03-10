@@ -1,87 +1,101 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import ShieldFraud, {
-  LogLevel,
   Config,
   EnvironmentInfo,
+  LogLevel,
   ShieldCallback,
 } from 'react-native-shield-fraud-plugin';
 
 const App = () => {
   const [sessionId, setSessionId] = useState('');
-  const [successResult, setSuccessResult] = useState('');
-
-  // Ref used inside the effect to check whether a device result has already
-  // been received, without adding successResult to the dependency array
-  // (which would cause the effect to re-run on every result update).
-  const hasResultRef = useRef(false);
+  const [result, setResult] = useState('');
 
   useEffect(() => {
-    // Define config and callbacks inside the effect so they are stable
-    // for this single mount-time run and satisfy exhaustive-deps.
-    const callbacks: ShieldCallback = {
-      onSuccess: (data) => {
-        console.log('Callback Success:', data);
-        setSuccessResult(JSON.stringify(data, null, 2));
-      },
-      onFailure: (error) => {
-        console.log('Callback Failure:', error);
-        setSuccessResult(error);
-      },
-    };
-
-    const config: Config = {
-      siteID: 'SHIELD_SITE_ID',
-      secretKey: 'SHIELD_SECRET_KEY',
-      blockedDialog: {
-        title: 'Blocked Dialog Title',
-        body: 'Blocked Dialog Body',
-      }, // can be null also depending on your requirement
-      logLevel: LogLevel.LogLevelInfo,
-      environmentInfo: EnvironmentInfo.EnvironmentProd,
-    };
-
     const initializeShield = async () => {
+      // ------------------------------------------------------------------
+      // On Android (SDK 2.x) — callbacks.onSuccess / onFailure fire from
+      // the createShieldWithCallback Sentinel automatically. Use them for
+      // all post-init work.
+      //
+      // On iOS (SDK 1.x) — callbacks fire from registerDeviceShieldCallback.
+      // isSDKready() is used separately to gate sendAttributes etc.
+      // ------------------------------------------------------------------
+      const callbacks: ShieldCallback = {
+        onSuccess: async (data) => {
+          console.log('[Shield] onSuccess:', data);
+          setResult(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+
+          if (Platform.OS === 'android') {
+            // Android: SDK is ready at this point — run all post-init calls here.
+            await runPostInitCalls();
+          }
+        },
+        onFailure: (error) => {
+          console.log('[Shield] onFailure:', error);
+          setResult(String(error));
+        },
+      };
+
+      const config: Config = {
+        siteID: 'SHIELD_SITE_ID',
+        secretKey: 'SHIELD_SECRET_KEY',
+        blockedDialog: {
+          title: 'Blocked Dialog Title',
+          body: 'Blocked Dialog Body',
+        },
+        logLevel: LogLevel.LogLevelInfo,
+        environmentInfo: EnvironmentInfo.EnvironmentProd,
+        blockScreenRecording: false, // Android-only, ignored on iOS
+      };
+
       await ShieldFraud.initShield(config, callbacks);
 
-      ShieldFraud.isSDKready(async (isReady: boolean) => {
-        if (isReady) {
-          console.log('SDK ready for sendAttributes:', isReady);
-          ShieldFraud.sendAttributes('Home', { userid: 'userid' });
-        } else {
-          console.log('SDK is not ready for sendAttributes');
-        }
-      });
+      if (Platform.OS === 'ios') {
+        // iOS: use isSDKready to gate post-init calls — fires after
+        // the SDK signals readiness via setDeviceResultStateListener.
+        ShieldFraud.isSDKready(async (isReady: boolean) => {
+          if (isReady) {
+            await runPostInitCalls();
+          } else {
+            console.log('[Shield] SDK is not ready');
+          }
+        });
+      }
+    };
 
-      ShieldFraud.isSDKready(async (isReady: boolean) => {
-        if (isReady) {
-          console.log('SDK ready for sessionID:', isReady);
-          const sessionID = await ShieldFraud.getSessionId();
-          setSessionId(sessionID);
-        } else {
-          console.log('SDK is not ready for sessionID');
-        }
-      });
+    // ------------------------------------------------------------------
+    // Post-init calls — same logic for both platforms, called from
+    // onSuccess (Android) or isSDKready callback (iOS).
+    // ------------------------------------------------------------------
+    const runPostInitCalls = async () => {
+      // Session ID
+      const sid = await ShieldFraud.getSessionId();
+      console.log('[Shield] sessionId:', sid);
+      setSessionId(sid);
 
-      ShieldFraud.isSDKready(async (isReady: boolean) => {
-        if (isReady) {
-          console.log('SDK ready for getLatestDeviceResult:', isReady);
+      // sendAttributes (fire-and-forget)
+      ShieldFraud.sendAttributes('Home', { userid: 'userid' });
 
-          ShieldFraud.getLatestDeviceResult()
-            .then((result: object) => {
-              if (!hasResultRef.current) {
-                hasResultRef.current = true;
-                console.log('Received latest device result:', result);
-                setSuccessResult(JSON.stringify(result, null, 2));
-              }
-            })
-            .catch((error: object) => {
-              console.log('Error retrieving device result:', error);
-            });
-        } else {
-          console.log('SDK is not ready for getLatestDeviceResult');
-        }
-      });
+      // sendAttributesWithCallback
+      try {
+        const didSend = await ShieldFraud.sendAttributesWithCallback(
+          'HomeWithCallback',
+          { userid: 'userid-callback' }
+        );
+        console.log('[Shield] sendAttributesWithCallback success:', didSend);
+      } catch (error) {
+        console.log('[Shield] sendAttributesWithCallback failure:', error);
+      }
+
+      // getLatestDeviceResult
+      try {
+        const deviceResult = await ShieldFraud.getLatestDeviceResult();
+        console.log('[Shield] getLatestDeviceResult:', deviceResult);
+        setResult(JSON.stringify(deviceResult, null, 2));
+      } catch (error) {
+        console.log('[Shield] getLatestDeviceResult error:', error);
+      }
     };
 
     initializeShield();
@@ -90,11 +104,11 @@ const App = () => {
   return (
     <View style={styles.container}>
       <View style={styles.terminalContainer}>
-        <Text style={styles.terminalText}>$ Welcome to My App!</Text>
-        <Text style={styles.terminalText}>$ session id - {sessionId}</Text>
-        <Text style={styles.terminalText}>$ Result - {successResult}</Text>
+        <Text style={styles.terminalText}>$ Welcome to Shield Example!</Text>
+        <Text style={styles.terminalText}>$ platform    - {Platform.OS}</Text>
+        <Text style={styles.terminalText}>$ session id  - {sessionId}</Text>
+        <Text style={styles.terminalText}>$ result      - {result}</Text>
       </View>
-      {/* Additional UI components for your app */}
     </View>
   );
 };
