@@ -67,6 +67,16 @@ export interface Spec extends TurboModule {
     errorCallback: (error: Object) => void
   ): void;
 
+  /**
+   * Triggers a device signature computation for a given screen and returns
+   * the latest device result (or error) via callbacks once complete.
+   */
+  sendDeviceSignature(
+    screenName: string,
+    successCallback: (result: Object) => void,
+    errorCallback: (error: string) => void
+  ): void;
+
   // Required by RCTEventEmitter for New Architecture compatibility
   addListener(eventName: string): void;
   removeListeners(count: number): void;

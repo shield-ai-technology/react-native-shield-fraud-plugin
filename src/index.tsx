@@ -284,11 +284,31 @@ class ShieldFraud {
     return new Promise((resolve, reject) => {
       ShieldFraud.PlatformWrapper.getLatestDeviceResult(
         (result: object) => {
-          // Handle success with the result object
           resolve(result);
         },
         (error: object) => {
-          // Handle error with the error object
+          reject(error);
+        }
+      );
+    });
+  }
+
+  /**
+   * Triggers a device signature computation for a given screen name.
+   * On success, resolves with the latest device result object.
+   * On failure, rejects with the error message.
+   *
+   * @param screenName - The name of the screen triggering the signature.
+   * @returns A Promise that resolves with the device result or rejects with an error.
+   */
+  public static sendDeviceSignature(screenName: string): Promise<object> {
+    return new Promise((resolve, reject) => {
+      ShieldFraud.PlatformWrapper.sendDeviceSignature(
+        screenName,
+        (result: object) => {
+          resolve(result);
+        },
+        (error: string) => {
           reject(error);
         }
       );
