@@ -189,14 +189,25 @@ class ShieldFraud {
   }
 
   /**
-   * Checks if the ShieldFraud SDK is ready and invokes the provided callback with the readiness state.
+   * iOS only — checks if the ShieldFraud SDK is ready and invokes the provided
+   * callback with the readiness state.
+   *
+   * On Android (SDK 2.x) device result events fire automatically via the
+   * Sentinel inside createShieldWithCallback. There is no subscription call
+   * and no reliable way to intercept the event after the fact, so this method
+   * is a no-op on Android. Use the `callbacks` parameter of `initShield`
+   * instead to receive device results on Android.
    *
    * @param callback - A callback function to be invoked with the readiness state.
-   *   - `isReady` (boolean): A boolean value indicating whether the ShieldFraud SDK is ready.
+   *   - `isReady` (boolean): true when the SDK has produced a device result.
    */
   public static async isSDKready(
     callback: (isReady: boolean) => void
   ): Promise<void> {
+    if (Platform.OS !== "ios") {
+      return;
+    }
+
     try {
       // Adding a timeout of 100 milliseconds
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -220,6 +231,8 @@ class ShieldFraud {
         "device_result_state",
         deviceResultListener
       );
+
+      // Trigger the SDK subscription — iOS 1.x requires this explicit call.
       ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
     } catch (error) {
       console.error("An error occurred:", error);

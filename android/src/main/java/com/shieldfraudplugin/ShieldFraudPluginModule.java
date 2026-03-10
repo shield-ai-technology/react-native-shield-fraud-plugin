@@ -73,11 +73,6 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
     @Nullable
     private Shield shield = null;
 
-    /**
-     * Controls whether device result updates are forwarded as JS events.
-     * Set to true when JS calls setDeviceResultStateListener().
-     */
-    private boolean emitDeviceResultEvents = false;
 
     public ShieldFraudPluginModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -160,18 +155,14 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
                     config,
                     result -> new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
                         if (result instanceof Result.Success) {
-                            // Forward to JS only after setDeviceResultStateListener() is called.
-                            if (emitDeviceResultEvents) {
-                                WritableMap params = Arguments.createMap();
-                                params.putString("status", "isSDKReady");
-                                emitEvent("device_result_state", params);
-                            }
+                            DeviceIntelligence di =
+                                    ((Result.Success<DeviceIntelligence>) result).getData();
+                            JSONObject json = di != null ? di.getData() : null;
+                            emitEvent("success", json != null ? json.toString() : null);
                         } else if (result instanceof Result.Failure) {
                             ShieldError error =
                                     ((Result.Failure<DeviceIntelligence>) result).getError();
-                            if (emitDeviceResultEvents) {
-                                emitEvent("error", error.getErrorMessage());
-                            }
+                            emitEvent("error", error.getErrorMessage());
                         }
                     }));
         } else {
@@ -195,35 +186,20 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
     }
 
     // =========================================================================
-    // SHIELD Sentinel — enable real-time device result events toward JS
+    // setDeviceResultStateListener — no-op stub (SDK 2.x)
     //
-    // SDK 1.x required calling Shield.getInstance().setDeviceResultStateListener()
-    // with a Handler.postDelayed workaround because readiness was a separate
-    // subscription. In SDK 2.x the Shield SDK checks readiness internally before
-    // every method call — createShieldWithCallback IS the listener. This plugin
-    // method no longer calls any SDK API; it simply:
+    // SDK 1.x required a manual subscription call + Handler.postDelayed workaround.
+    // SDK 2.x fires device result events automatically via createShieldWithCallback
+    // when isOptimizedListener == true — no subscription call needed.
     //
-    //   1. Arms emitDeviceResultEvents so future Sentinel firings (from
-    //      createShieldWithCallback callback in initShield) are forwarded to JS.
-    //   2. If a latest result already exists in the SDK, emit immediately so
-    //      JS doesn't miss the event.
-    //
-    // Only meaningful when isOptimizedListener=true (createShieldWithCallback).
-    // When isOptimizedListener=false JS should use getLatestDeviceResult() instead.
+    // The method is kept as a no-op stub so the shared TypeScript codegen spec
+    // and iOS (which still calls the SDK method) remain unaffected.
     // =========================================================================
 
     @ReactMethod
     public void setDeviceResultStateListener() {
-        emitDeviceResultEvents = true;
-
-        // Emit on main thread — the Sentinel callback may arrive on a bg thread.
-        if (shield != null && shield.getLatestDeviceResult() != null) {
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                WritableMap params = Arguments.createMap();
-                params.putString("status", "isSDKReady");
-                emitEvent("device_result_state", params);
-            });
-        }
+        // No-op on Android SDK 2.x — device result events are delivered
+        // automatically through the createShieldWithCallback Sentinel.
     }
 
     // =========================================================================
@@ -239,13 +215,13 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
             return;
         }
 
-        JSONObject latestDeviceResult = shield.getLatestDeviceResult();
-        if (latestDeviceResult == null) {
+        JSONObject json = shield.getLatestDeviceResult();
+        if (json == null) {
             errorCallback.invoke("No device result available yet.");
             return;
         }
 
-        successCallback.invoke(toWritableMap(latestDeviceResult));
+        successCallback.invoke(toWritableMap(json));
     }
 
     // =========================================================================
@@ -319,7 +295,6 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
         // (it is only on the NativeModule interface), so super.invalidate() fails
         // to compile. Our own cleanup is all that is needed here.
         shield = null;
-        emitDeviceResultEvents = false;
     }
 
     // =========================================================================
