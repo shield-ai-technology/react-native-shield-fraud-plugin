@@ -267,9 +267,7 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
                                 ? error.getErrorMessage()
                                 : "Failed to send attributes.";
                         errorCallback.invoke(errorMessage);
-                    } else {
-                        errorCallback.invoke("Failed to send attributes.");
-                    }
+                    } 
                 })
         );
     }
