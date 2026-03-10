@@ -96,6 +96,15 @@ const App = () => {
       } catch (error) {
         console.log('[Shield] getLatestDeviceResult error:', error);
       }
+
+      // sendDeviceSignature
+      try {
+        const signatureResult = await ShieldFraud.sendDeviceSignature('Home');
+        console.log('[Shield] sendDeviceSignature:', signatureResult);
+        setResult(JSON.stringify(signatureResult, null, 2));
+      } catch (error) {
+        console.log('[Shield] sendDeviceSignature error:', error);
+      }
     };
 
     initializeShield();

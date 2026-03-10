@@ -275,6 +275,39 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
     }
 
     // =========================================================================
+    // Send device signature
+    //
+    // Triggers a device signature computation for the given screen name.
+    // On success the SDK calls back with the session ID (String); the latest
+    // device result JSONObject is then retrieved via shield.getLatestDeviceResult().
+    // =========================================================================
+
+    @ReactMethod
+    public void sendDeviceSignature(
+            String screenName,
+            Callback successCallback,
+            Callback errorCallback) {
+        if (shield == null) {
+            errorCallback.invoke("Shield SDK is not initialized.");
+            return;
+        }
+
+        shield.sendDeviceSignatureWithCallback(screenName, result ->
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    if (result instanceof Result.Success) {
+                        JSONObject json = shield.getLatestDeviceResult();
+                        successCallback.invoke(json != null ? toWritableMap(json) : null);
+                    } else if (result instanceof Result.Failure) {
+                        ShieldError error = ((Result.Failure<String>) result).getError();
+                        errorCallback.invoke(error != null
+                                ? error.getErrorMessage()
+                                : "Failed to send device signature.");
+                    }
+                })
+        );
+    }
+
+    // =========================================================================
     // RCTEventEmitter stubs — required for compatibility on both architectures
     // =========================================================================
 

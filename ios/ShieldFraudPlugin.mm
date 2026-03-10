@@ -94,6 +94,33 @@ RCT_EXPORT_METHOD(sendAttributesWithCallback:(NSString *)screenName
     }];
 }
 
+// Trigger a device signature computation for a given screen name.
+// The completionHandler fires when the SDK is done; results and errors
+// are read back from getLatestDeviceResult / getErrorResponse.
+RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
+                  successCallback:(RCTResponseSenderBlock)successCallback
+                  errorCallback:(RCTResponseSenderBlock)errorCallback)
+{
+    [[Shield shared] sendDeviceSignatureWithScreenName:screenName
+                                    completionHandler:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSDictionary<NSString *, id> *deviceResult = [[Shield shared] getLatestDeviceResult];
+            if (deviceResult != nil) {
+                successCallback(@[deviceResult]);
+                return;
+            }
+
+            NSError *error = [[Shield shared] getErrorResponse];
+            if (error != nil) {
+                errorCallback(@[[error localizedDescription]]);
+                return;
+            }
+
+            errorCallback(@[@"No device result available."]);
+        });
+    }];
+}
+
 // RCTEventEmitter — declare the events this module can emit
 - (NSArray<NSString *> *)supportedEvents
 {
