@@ -14,22 +14,13 @@ const App = () => {
   useEffect(() => {
     const initializeShield = async () => {
       // ------------------------------------------------------------------
-      // On Android (SDK 2.x) — callbacks.onSuccess / onFailure fire from
-      // the createShieldWithCallback Sentinel automatically. Use them for
-      // all post-init work.
-      //
-      // On iOS (SDK 1.x) — callbacks fire from registerDeviceShieldCallback.
-      // isSDKready() is used separately to gate sendAttributes etc.
+      // Use callbacks for logging and live SDK events, and use isSDKready()
+      // as the single readiness gate for post-init work on both platforms.
       // ------------------------------------------------------------------
       const callbacks: ShieldCallback = {
-        onSuccess: async (data) => {
+        onSuccess: (data) => {
           console.log('[Shield] onSuccess:', data);
           setResult(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
-
-          if (Platform.OS === 'android') {
-            // Android: SDK is ready at this point — run all post-init calls here.
-            await runPostInitCalls();
-          }
         },
         onFailure: (error) => {
           console.log('[Shield] onFailure:', error);
@@ -51,22 +42,19 @@ const App = () => {
 
       await ShieldFraud.initShield(config, callbacks);
 
-      if (Platform.OS === 'ios') {
-        // iOS: use isSDKready to gate post-init calls — fires after
-        // the SDK signals readiness via setDeviceResultStateListener.
-        ShieldFraud.isSDKready(async (isReady: boolean) => {
-          if (isReady) {
-            await runPostInitCalls();
-          } else {
-            console.log('[Shield] SDK is not ready');
-          }
-        });
-      }
+      // Use the same SDK-ready gate on Android and iOS.
+      ShieldFraud.isSDKready(async (isReady: boolean) => {
+        if (isReady) {
+          await runPostInitCalls();
+        } else {
+          console.log('[Shield] SDK is not ready');
+        }
+      });
     };
 
     // ------------------------------------------------------------------
     // Post-init calls — same logic for both platforms, called from
-    // onSuccess (Android) or isSDKready callback (iOS).
+    // the shared isSDKready callback.
     // ------------------------------------------------------------------
     const runPostInitCalls = async () => {
       // Session ID
