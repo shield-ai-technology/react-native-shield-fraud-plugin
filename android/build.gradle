@@ -99,5 +99,5 @@ dependencies {
   implementation "com.facebook.react:react-native:+"
 
   // Shield Fraud SDK 2.x — factory-based init, callback-based device intelligence
-  implementation 'com.shield.android:shield-fraud:2.4.0'
+  implementation 'com.shield.android:shield-fraud:2.5.0'
 }
