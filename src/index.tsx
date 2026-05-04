@@ -3,14 +3,14 @@ import {
   NativeEventEmitter,
   Platform,
   TurboModuleRegistry,
-} from "react-native";
+} from 'react-native';
 
 /**
  * Resolve the native module through TurboModuleRegistry (New Architecture)
  * with a fallback to NativeModules bridge (Old Architecture).
  */
 const ShieldFraudPluginNativeModule =
-  TurboModuleRegistry.get<any>("ShieldFraudPlugin") ??
+  TurboModuleRegistry.get<any>('ShieldFraudPlugin') ??
   NativeModules.ShieldFraudPlugin;
 
 /**
@@ -27,8 +27,8 @@ export enum LogLevel {
  * Enum representing the environment information for ShieldFraud.
  */
 export enum EnvironmentInfo {
-  EnvironmentProd = 0,    // Environment.PROD
-  EnvironmentDev = 1,     // Environment.DEV
+  EnvironmentProd = 0, // Environment.PROD
+  EnvironmentDev = 1, // Environment.DEV
   EnvironmentStaging = 2, // Environment.STAGING
 }
 
@@ -108,7 +108,7 @@ class ShieldFraud {
     // Set default values if environmentInfo is not provided
     const environmentInfo =
       config.environmentInfo || EnvironmentInfo.EnvironmentProd;
-    
+
     // Set cross-platform parameters internally (React Native and version from package.json)
     ShieldFraud.setCrossPlatformParameters();
 
@@ -116,7 +116,7 @@ class ShieldFraud {
     // Always send a real boolean — the Old Arch bridge cannot handle null
     // for boolean parameters (causes NPE in ReadableNativeArray.getBoolean).
     const blockScreenRecording =
-      Platform.OS === "android" ? (config.blockScreenRecording ?? false) : false;
+      Platform.OS === 'android' ? config.blockScreenRecording ?? false : false;
 
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
@@ -140,8 +140,8 @@ class ShieldFraud {
    * The cross-platform name and the version is fetched from package.json.
    */
   private static setCrossPlatformParameters(): void {
-    const crossPlatformName = "react-native-shield-fraud-plugin";
-    const crossPlatformVersion = "2.0.1";
+    const crossPlatformName = 'react-native-shield-fraud-plugin';
+    const crossPlatformVersion = '2.1.0';
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
@@ -156,14 +156,14 @@ class ShieldFraud {
    */
   private static listeners(callbacks?: ShieldCallback): void {
     // Listen for success events and invoke the onSuccess callback if provided.
-    ShieldFraud.eventEmitter.addListener("success", (data) => {
+    ShieldFraud.eventEmitter.addListener('success', (data) => {
       if (callbacks?.onSuccess) {
         callbacks.onSuccess(data);
       }
     });
 
     // Listen for error events and invoke the onFailure callback if provided.
-    ShieldFraud.eventEmitter.addListener("error", (error) => {
+    ShieldFraud.eventEmitter.addListener('error', (error) => {
       if (callbacks?.onFailure) {
         callbacks.onFailure(error);
       }
@@ -201,7 +201,7 @@ class ShieldFraud {
   public static async isSDKready(
     callback: (isReady: boolean) => void
   ): Promise<void> {
-   if (Platform.OS === "android") {
+    if (Platform.OS === 'android') {
       const isInitialized = await this.isShieldInitialized();
       callback(isInitialized);
       return;
@@ -214,27 +214,27 @@ class ShieldFraud {
       const isInitialized = await this.isShieldInitialized();
 
       if (!isInitialized) {
-        console.log("Shield SDK not initialized:");
+        console.log('Shield SDK not initialized:');
         callback(false);
         return;
       }
 
       const deviceResultListener = (event: { status: string }) => {
-        if (event.status === "isSDKReady") {
-          ShieldFraud.eventEmitter.removeAllListeners("device_result_state");
+        if (event.status === 'isSDKReady') {
+          ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
           callback(true);
         }
       };
 
       ShieldFraud.eventEmitter.addListener(
-        "device_result_state",
+        'device_result_state',
         deviceResultListener
       );
 
       // Trigger the SDK subscription — iOS 1.x requires this explicit call.
       ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
     } catch (error) {
-      console.error("An error occurred:", error);
+      console.error('An error occurred:', error);
       callback(false);
     }
   }
