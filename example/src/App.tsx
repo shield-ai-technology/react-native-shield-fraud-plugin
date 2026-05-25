@@ -85,13 +85,28 @@ const App = () => {
         console.log('[Shield] getLatestDeviceResult error:', error);
       }
 
-      // sendDeviceSignature
+      // sendDeviceSignature (without userId)
       try {
         const signatureResult = await ShieldFraud.sendDeviceSignature('Home');
         console.log('[Shield] sendDeviceSignature:', signatureResult);
         setResult(JSON.stringify(signatureResult, null, 2));
       } catch (error) {
         console.log('[Shield] sendDeviceSignature error:', error);
+      }
+
+      // sendDeviceSignature (with userId)
+      try {
+        const signatureResultWithUser = await ShieldFraud.sendDeviceSignature(
+          'Home',
+          'user_456'
+        );
+        console.log(
+          '[Shield] sendDeviceSignature (userId):',
+          signatureResultWithUser
+        );
+        setResult(JSON.stringify(signatureResultWithUser, null, 2));
+      } catch (error) {
+        console.log('[Shield] sendDeviceSignature (userId) error:', error);
       }
     };
 

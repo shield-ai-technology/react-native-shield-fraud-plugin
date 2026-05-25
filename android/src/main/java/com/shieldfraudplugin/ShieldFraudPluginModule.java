@@ -27,6 +27,7 @@ import com.shield.android.ShieldCrossPlatformHelper;
 import com.shield.android.ShieldCrossPlatformParams;
 import com.shield.android.ShieldError;
 import com.shield.android.ShieldFactory;
+import com.shield.android.ShieldUserData;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -283,6 +284,7 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
     @ReactMethod
     public void sendDeviceSignature(
             String screenName,
+            @Nullable String userId,
             Callback successCallback,
             Callback errorCallback) {
         if (shield == null) {
@@ -290,7 +292,12 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
             return;
         }
 
-        shield.sendDeviceSignatureWithCallback(screenName, result ->
+        ShieldUserData userData = new ShieldUserData(screenName);
+        if (userId != null && !userId.isEmpty()) {
+            userData.setUserId(userId);
+        }
+
+        shield.sendDeviceSignatureWithCallback(userData, result ->
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
                     if (result instanceof Result.Success) {
                         JSONObject json = shield.getLatestDeviceResult();

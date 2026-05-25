@@ -309,12 +309,17 @@ class ShieldFraud {
    * On failure, rejects with the error message.
    *
    * @param screenName - The name of the screen triggering the signature.
+   * @param userId - (Optional) A user ID to associate with the device signature.
    * @returns A Promise that resolves with the device result or rejects with an error.
    */
-  public static sendDeviceSignature(screenName: string): Promise<object> {
+  public static sendDeviceSignature(
+    screenName: string,
+    userId?: string
+  ): Promise<object> {
     return new Promise((resolve, reject) => {
       ShieldFraud.PlatformWrapper.sendDeviceSignature(
         screenName,
+        userId ?? null,
         (result: object) => {
           resolve(result);
         },
