@@ -4,6 +4,7 @@ import {
   Platform,
   TurboModuleRegistry,
 } from 'react-native';
+import packageJson from '../package.json';
 
 /**
  * Resolve the native module through TurboModuleRegistry (New Architecture)
@@ -90,6 +91,11 @@ class ShieldFraud {
     ShieldFraud.PlatformWrapper
   );
 
+  private static callbackSubscriptions: {
+    success?: { remove: () => void };
+    error?: { remove: () => void };
+  } = {};
+
   /**
    * Initializes the ShieldFraud plugin with the provided configuration.
    *
@@ -140,8 +146,8 @@ class ShieldFraud {
    * The cross-platform name and the version is fetched from package.json.
    */
   private static setCrossPlatformParameters(): void {
-    const crossPlatformName = 'react-native-shield-fraud-plugin';
-    const crossPlatformVersion = '2.1.0';
+    const crossPlatformName = packageJson.name;
+    const crossPlatformVersion = packageJson.version;
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
@@ -155,36 +161,41 @@ class ShieldFraud {
    * @param callbacks - The callback functions for success and failure events.
    */
   private static listeners(callbacks?: ShieldCallback): void {
+    ShieldFraud.callbackSubscriptions.success?.remove();
+    ShieldFraud.callbackSubscriptions.error?.remove();
+
     // Listen for success events and invoke the onSuccess callback if provided.
-    ShieldFraud.eventEmitter.addListener('success', (data) => {
-      if (callbacks?.onSuccess) {
-        callbacks.onSuccess(data);
-      }
-    });
+    ShieldFraud.callbackSubscriptions.success =
+      ShieldFraud.eventEmitter.addListener('success', (data) => {
+        if (callbacks?.onSuccess) {
+          callbacks.onSuccess(data);
+        }
+      });
 
     // Listen for error events and invoke the onFailure callback if provided.
-    ShieldFraud.eventEmitter.addListener('error', (error) => {
-      if (callbacks?.onFailure) {
-        callbacks.onFailure(error);
-      }
-    });
+    ShieldFraud.callbackSubscriptions.error =
+      ShieldFraud.eventEmitter.addListener('error', (error) => {
+        if (callbacks?.onFailure) {
+          callbacks.onFailure(error);
+        }
+      });
   }
 
   /**
    * Retrieves the session ID from the ShieldFraud plugin.
    *
-   * @returns A Promise that resolves with the session ID.
+   * @returns The current session ID.
    */
-  public static getSessionId(): Promise<string> {
+  public static getSessionId(): string {
     return ShieldFraud.PlatformWrapper.getSessionId();
   }
 
   /**
    * Checks whether the ShieldFraud plugin is initialized.
    *
-   * @returns A Promise that resolves with a boolean value indicating whether the ShieldFraud plugin is initialized (true) or not (false).
+   * @returns Whether the ShieldFraud plugin is initialized.
    */
-  public static isShieldInitialized(): Promise<boolean> {
+  public static isShieldInitialized(): boolean {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
   }
 

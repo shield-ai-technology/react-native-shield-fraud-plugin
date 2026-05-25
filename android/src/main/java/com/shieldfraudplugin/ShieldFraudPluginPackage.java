@@ -67,7 +67,7 @@ public class ShieldFraudPluginPackage extends TurboReactPackage {
                     ShieldFraudPluginModule.NAME,  // className
                     false,                          // canOverrideExistingModule
                     false,                          // needsEagerInit
-                    true,                           // hasConstants
+                    false,                          // hasConstants
                     false,                          // isCxxModule
                     isTurboModule                   // isTurboModule
                 )
