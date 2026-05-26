@@ -173,18 +173,18 @@ class ShieldFraud {
   /**
    * Retrieves the session ID from the ShieldFraud plugin.
    *
-   * @returns A Promise that resolves with the session ID.
+   * @returns The current session ID string (synchronous).
    */
-  public static getSessionId(): Promise<string> {
+  public static getSessionId(): string {
     return ShieldFraud.PlatformWrapper.getSessionId();
   }
 
   /**
    * Checks whether the ShieldFraud plugin is initialized.
    *
-   * @returns A Promise that resolves with a boolean value indicating whether the ShieldFraud plugin is initialized (true) or not (false).
+   * @returns A boolean indicating whether the ShieldFraud plugin is initialized (synchronous).
    */
-  public static isShieldInitialized(): Promise<boolean> {
+  public static isShieldInitialized(): boolean {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
   }
 
@@ -202,7 +202,7 @@ class ShieldFraud {
     callback: (isReady: boolean) => void
   ): Promise<void> {
     if (Platform.OS === 'android') {
-      const isInitialized = await this.isShieldInitialized();
+      const isInitialized = this.isShieldInitialized();
       callback(isInitialized);
       return;
     }
@@ -211,7 +211,7 @@ class ShieldFraud {
       // Adding a timeout of 100 milliseconds
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const isInitialized = await this.isShieldInitialized();
+      const isInitialized = this.isShieldInitialized();
 
       if (!isInitialized) {
         console.log('Shield SDK not initialized:');
