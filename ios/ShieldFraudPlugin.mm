@@ -37,13 +37,13 @@ RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
     NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
-    if (result != NULL) {
+    if (result != nil) {
         successCallback(@[result]);
         return;
     }
 
     NSError *error = [[Shield shared] getErrorResponse];
-    if (error != NULL) {
+    if (error != nil) {
         errorCallback(@[[error localizedDescription]]);
         return;
     }
