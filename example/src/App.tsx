@@ -58,7 +58,7 @@ const App = () => {
     // ------------------------------------------------------------------
     const runPostInitCalls = async () => {
       // Session ID
-      const sid = await ShieldFraud.getSessionId();
+      const sid = ShieldFraud.getSessionId();
       console.log('[Shield] sessionId:', sid);
       setSessionId(sid);
 
