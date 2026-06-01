@@ -4,6 +4,7 @@ import {
   Platform,
   TurboModuleRegistry,
 } from 'react-native';
+import packageJson from '../package.json';
 
 /**
  * Resolve the native module through TurboModuleRegistry (New Architecture)
@@ -140,8 +141,8 @@ class ShieldFraud {
    * The cross-platform name and the version is fetched from package.json.
    */
   private static setCrossPlatformParameters(): void {
-    const crossPlatformName = 'react-native-shield-fraud-plugin';
-    const crossPlatformVersion = '2.1.0';
+    const crossPlatformName = packageJson.name;
+    const crossPlatformVersion = packageJson.version;
 
     ShieldFraud.PlatformWrapper.setCrossPlatformParameters(
       crossPlatformName,
