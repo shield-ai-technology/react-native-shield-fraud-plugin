@@ -48,9 +48,9 @@ import java.util.Map;
  * 5. sendAttributes     : void return
  *                           →  shield.sendAttributesWithCallback (Result<String> callback)
  * 6. LogLevel enum      : Shield.LogLevel.VERBOSE/DEBUG/INFO/NONE
- *                           →  LogLevel.DEBUG / INFO / NONE  (VERBOSE removed)
+ *                           →  LogLevel.VERBOSE / DEBUG / INFO / NONE
  * 7. Environment enum   : String constants ENVIRONMENT_PROD / DEV / STAGING
- *                           →  Environment.PROD / DEV  (STAGING removed)
+ *                           →  Environment.PROD / DEV / STAGING
  *
  * Architecture segmentation
  * ─────────────────────────
