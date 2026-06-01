@@ -92,6 +92,15 @@ class ShieldFraud {
   );
 
   /**
+   * Tracks active callback subscriptions so they can be removed before
+   * re-registering on a subsequent initShield call, preventing listener leaks.
+   */
+  private static callbackSubscriptions: {
+    success?: { remove: () => void };
+    error?: { remove: () => void };
+  } = {};
+
+  /**
    * Initializes the ShieldFraud plugin with the provided configuration.
    *
    * @param config - The configuration object containing the required properties.
@@ -156,19 +165,26 @@ class ShieldFraud {
    * @param callbacks - The callback functions for success and failure events.
    */
   private static listeners(callbacks?: ShieldCallback): void {
+    // Remove any existing subscriptions before re-registering to prevent
+    // listener leaks when initShield is called more than once.
+    ShieldFraud.callbackSubscriptions.success?.remove();
+    ShieldFraud.callbackSubscriptions.error?.remove();
+
     // Listen for success events and invoke the onSuccess callback if provided.
-    ShieldFraud.eventEmitter.addListener('success', (data) => {
-      if (callbacks?.onSuccess) {
-        callbacks.onSuccess(data);
-      }
-    });
+    ShieldFraud.callbackSubscriptions.success =
+      ShieldFraud.eventEmitter.addListener('success', (data) => {
+        if (callbacks?.onSuccess) {
+          callbacks.onSuccess(data);
+        }
+      });
 
     // Listen for error events and invoke the onFailure callback if provided.
-    ShieldFraud.eventEmitter.addListener('error', (error) => {
-      if (callbacks?.onFailure) {
-        callbacks.onFailure(error);
-      }
-    });
+    ShieldFraud.callbackSubscriptions.error =
+      ShieldFraud.eventEmitter.addListener('error', (error) => {
+        if (callbacks?.onFailure) {
+          callbacks.onFailure(error);
+        }
+      });
   }
 
   /**
