@@ -70,9 +70,11 @@ export interface Spec extends TurboModule {
   /**
    * Triggers a device signature computation for a given screen and returns
    * the latest device result (or error) via callbacks once complete.
+   * Pass userId to associate the result with a specific user.
    */
   sendDeviceSignature(
     screenName: string,
+    userId: string | null,
     successCallback: (result: Object) => void,
     errorCallback: (error: string) => void
   ): void;
