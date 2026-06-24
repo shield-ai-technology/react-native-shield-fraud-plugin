@@ -293,7 +293,7 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
         }
 
         ShieldUserData userData = new ShieldUserData(screenName);
-        if (userId != null && !userId.isEmpty()) {
+        if (userId != null) {
             userData.setUserId(userId);
         }
 

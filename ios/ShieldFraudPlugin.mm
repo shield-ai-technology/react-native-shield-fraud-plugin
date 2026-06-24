@@ -95,7 +95,7 @@ RCT_EXPORT_METHOD(sendAttributesWithCallback:(NSString *)screenName
 }
 
 // Trigger a device signature computation for a given screen name.
-// Pass a non-nil userId to associate the result with a specific user.
+// Pass userId to associate the result with a specific user.
 // The completionHandler fires when the SDK is done; results and errors
 // are read back from getLatestDeviceResult / getErrorResponse.
 RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
@@ -105,7 +105,7 @@ RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
 {
     ShieldUserData *userData = [[ShieldUserData alloc]
                                     initWithScreenName:screenName
-                                    userId:(userId.length > 0 ? userId : nil)];
+                                    userId:userId];
 
     [[Shield shared] sendDeviceSignatureWithUserData:userData
                                   completionHandler:^{
