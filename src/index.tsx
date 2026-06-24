@@ -91,10 +91,6 @@ class ShieldFraud {
     ShieldFraud.PlatformWrapper
   );
 
-  /**
-   * Tracks active callback subscriptions so they can be removed before
-   * re-registering on a subsequent initShield call, preventing listener leaks.
-   */
   private static callbackSubscriptions: {
     success?: { remove: () => void };
     error?: { remove: () => void };
@@ -165,8 +161,6 @@ class ShieldFraud {
    * @param callbacks - The callback functions for success and failure events.
    */
   private static listeners(callbacks?: ShieldCallback): void {
-    // Remove any existing subscriptions before re-registering to prevent
-    // listener leaks when initShield is called more than once.
     ShieldFraud.callbackSubscriptions.success?.remove();
     ShieldFraud.callbackSubscriptions.error?.remove();
 
@@ -190,7 +184,7 @@ class ShieldFraud {
   /**
    * Retrieves the session ID from the ShieldFraud plugin.
    *
-   * @returns The current session ID string (synchronous).
+   * @returns The current session ID.
    */
   public static getSessionId(): string {
     return ShieldFraud.PlatformWrapper.getSessionId();
@@ -199,7 +193,7 @@ class ShieldFraud {
   /**
    * Checks whether the ShieldFraud plugin is initialized.
    *
-   * @returns A boolean indicating whether the ShieldFraud plugin is initialized (synchronous).
+   * @returns Whether the ShieldFraud plugin is initialized.
    */
   public static isShieldInitialized(): boolean {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
@@ -219,7 +213,7 @@ class ShieldFraud {
     callback: (isReady: boolean) => void
   ): Promise<void> {
     if (Platform.OS === 'android') {
-      const isInitialized = this.isShieldInitialized();
+      const isInitialized = await this.isShieldInitialized();
       callback(isInitialized);
       return;
     }
@@ -228,7 +222,7 @@ class ShieldFraud {
       // Adding a timeout of 100 milliseconds
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const isInitialized = this.isShieldInitialized();
+      const isInitialized = await this.isShieldInitialized();
 
       if (!isInitialized) {
         console.log('Shield SDK not initialized:');
@@ -315,12 +309,17 @@ class ShieldFraud {
    * On failure, rejects with the error message.
    *
    * @param screenName - The name of the screen triggering the signature.
+   * @param userId - (Optional) A user ID to associate with the device signature.
    * @returns A Promise that resolves with the device result or rejects with an error.
    */
-  public static sendDeviceSignature(screenName: string): Promise<object> {
+  public static sendDeviceSignature(
+    screenName: string,
+    userId?: string
+  ): Promise<object> {
     return new Promise((resolve, reject) => {
       ShieldFraud.PlatformWrapper.sendDeviceSignature(
         screenName,
+        userId ?? null,
         (result: object) => {
           resolve(result);
         },
