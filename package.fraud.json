@@ -1,6 +1,6 @@
 {
   "name": "react-native-shield-fraud-plugin",
-  "version": "2.2.0",
+  "version": "2.1.1",
   "description": "React Native Shield Fraud Plugin helps developers to assess malicious activities performed on mobile devices and return risk intelligence based on user's behaviour. It collects device's fingerprint, social metrics and network information.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -36,7 +36,7 @@
     "bootstrap": "yarn example && yarn install && yarn example pods",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build",
     "bump": "bash scripts/bump-version.sh",
-    "publish": "node scripts/publish.js",
+    "publish-full": "node scripts/publish.js",
     "use-fraud": "node scripts/use-plugin.js fraud",
     "use-full": "node scripts/use-plugin.js full"
   },

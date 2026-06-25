@@ -13,6 +13,14 @@ def isNewArchitectureEnabled() {
   return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
 }
 
+// Detect which npm package is installed by reading its own package.json.
+// When published as react-native-shield-full-plugin the name field differs.
+def packageJson = new groovy.json.JsonSlurper().parseText(
+  new File("${project.projectDir}/../package.json").text
+)
+def isFullPlugin = packageJson.name == "react-native-shield-full-plugin"
+def shieldSdkArtifact = isFullPlugin ? "com.shield.android:shield:2.6.0" : "com.shield.android:shield-fraud:2.6.0"
+
 apply plugin: "com.android.library"
 
 if (isNewArchitectureEnabled()) {
@@ -97,6 +105,5 @@ dependencies {
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   implementation "com.facebook.react:react-native:0.71.7"
 
-  // Shield Fraud SDK 2.x — factory-based init, callback-based device intelligence
-  implementation 'com.shield.android:shield-fraud:2.6.0'
+  implementation shieldSdkArtifact
 }

@@ -326,10 +326,10 @@ PODS:
   - React-jsinspector (0.71.7)
   - React-logger (0.71.7):
     - glog
-  - react-native-shield-fraud-plugin (2.1.0):
+  - react-native-shield-fraud-plugin (2.1.1):
     - RCT-Folly (= 2021.07.22.00)
     - React-Core
-    - ShieldFraud (>= 1.5.56)
+    - ShieldFraud (>= 1.5.58)
   - React-perflogger (0.71.7)
   - React-RCTActionSheet (0.71.7):
     - React-Core/RCTActionSheetHeaders (= 0.71.7)
@@ -414,7 +414,7 @@ PODS:
     - React-jsi (= 0.71.7)
     - React-logger (= 0.71.7)
     - React-perflogger (= 0.71.7)
-  - ShieldFraud (1.5.57)
+  - ShieldFraud (1.5.58)
   - SocketRocket (0.7.1)
   - Yoga (1.14.0)
 
@@ -604,7 +604,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 9d82afa25714e586202fc1f4b874136f76a26433
   React-jsinspector: 9885f6f94d231b95a739ef7bb50536fb87ce7539
   React-logger: 910232960f5dc0712291adb76f77e076d1c5c828
-  react-native-shield-fraud-plugin: bfa6d4b8c305e742cacafe877f300cfa80d9e9de
+  react-native-shield-fraud-plugin: b0bea8482bb74aa4efe94ee82b03ded6578b3d1d
   React-perflogger: 2d505bbe298e3b7bacdd9e542b15535be07220f6
   React-RCTActionSheet: 0e96e4560bd733c9b37efbf68f5b1a47615892fb
   React-RCTAnimation: fd138e26f120371c87e406745a27535e2c8a04ef
@@ -618,10 +618,10 @@ SPEC CHECKSUMS:
   React-RCTVibration: 08f132cad9896458776f37c112e71d60aef1c6ae
   React-runtimeexecutor: c5c89f8f543842dd864b63ded1b0bbb9c9445328
   ReactCommon: 4f9d032ed5dd2d8a415a8098a9246c38796e8444
-  ShieldFraud: d91b55516df7ee53bf09fbc3d99428fa80b47ffa
+  ShieldFraud: 1a73e34a0e960eb8791bf7fb2fd5802f8b92950b
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: d56980c8914db0b51692f55533409e844b66133c
 
-PODFILE CHECKSUM: 599e4b356092188f747dd27a9d6b8496b1bd71c2
+PODFILE CHECKSUM: a0039a3fb20885f8fca289c7c7f49fa5947d020a
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.12.1
