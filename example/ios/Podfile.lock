@@ -326,7 +326,7 @@ PODS:
   - React-jsinspector (0.71.7)
   - React-logger (0.71.7):
     - glog
-  - react-native-shield-fraud-plugin (2.1.1):
+  - react-native-shield-fraud-plugin (2.2.0):
     - RCT-Folly (= 2021.07.22.00)
     - React-Core
     - ShieldFraud (>= 1.5.58)
@@ -604,7 +604,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 9d82afa25714e586202fc1f4b874136f76a26433
   React-jsinspector: 9885f6f94d231b95a739ef7bb50536fb87ce7539
   React-logger: 910232960f5dc0712291adb76f77e076d1c5c828
-  react-native-shield-fraud-plugin: b0bea8482bb74aa4efe94ee82b03ded6578b3d1d
+  react-native-shield-fraud-plugin: 7b4f07b1d8bdf6ffc92ed401a978aad843dccf5e
   React-perflogger: 2d505bbe298e3b7bacdd9e542b15535be07220f6
   React-RCTActionSheet: 0e96e4560bd733c9b37efbf68f5b1a47615892fb
   React-RCTAnimation: fd138e26f120371c87e406745a27535e2c8a04ef
