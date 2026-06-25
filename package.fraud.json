@@ -35,7 +35,7 @@
     "example": "yarn --cwd example",
     "bootstrap": "yarn example && yarn install && yarn example pods",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build",
-    "publish": "node scripts/publish.js",
+    "publish-full": "node scripts/publish.js",
     "use-fraud": "node scripts/use-plugin.js fraud",
     "use-full": "node scripts/use-plugin.js full"
   },

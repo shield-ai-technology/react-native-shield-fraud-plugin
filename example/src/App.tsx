@@ -29,8 +29,8 @@ const App = () => {
       };
 
       const config: Config = {
-        siteID: 'SHIELD_SITE_ID',
-        secretKey: 'SHIELD_SECRET_KEY',
+        siteID: '59947973924580a1bf14766e74331641870de57f',
+        secretKey: '242236650000000059947973924580a1bf14766e74331641870de57f',
         blockedDialog: {
           title: 'Blocked Dialog Title',
           body: 'Blocked Dialog Body',
