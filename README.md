@@ -16,7 +16,7 @@ There are few steps to getting started with the SHIELD SDK:
 
 5. [Send Custom Attributes](#send-custom-attributes)
 
-6. [Send Device Signature](#send-device-signature)
+6. [Send Device Fingerprint](#send-device-signature)
 
 7. [Migration from BRIDGE CODE to PLUGIN](#migration-from-bridge-code-to-plugin)
 
@@ -169,7 +169,7 @@ ShieldFraud.isSDKready(async (isReady: boolean) => {
 }
 ```
 
-### Send Device Signature
+### Send Device Fingerprint
 
 Use the sendDeviceSignature function to manually trigger device signature collection for a screen or user checkpoint.
 
