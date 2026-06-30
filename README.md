@@ -16,7 +16,9 @@ There are few steps to getting started with the SHIELD SDK:
 
 5. [Send Custom Attributes](#send-custom-attributes)
 
-6. [Migration from BRIDGE CODE to PLUGIN](#migration-from-bridge-code-to-plugin)
+6. [Send Device Signature](#send-device-signature)
+
+7. [Migration from BRIDGE CODE to PLUGIN](#migration-from-bridge-code-to-plugin)
 
 
 
@@ -165,6 +167,19 @@ ShieldFraud.isSDKready(async (isReady: boolean) => {
         ShieldFraud.sendAttributes('Screen_Name', { key1: 'value1', key2: 'value2' });
     }
 }
+```
+
+### Send Device Signature
+
+Use the sendDeviceSignature function to manually trigger device signature collection for a screen or user checkpoint.
+
+```
+// with screen name only
+const deviceintelligence = await ShieldFraud.sendDeviceSignature('screen_name');
+
+// with screen name and user id
+const deviceintelligence = await ShieldFraud.sendDeviceSignature('screen_name', 'user_id');
+
 ```
 
 ### Migration from BRIDGE CODE to PLUGIN
