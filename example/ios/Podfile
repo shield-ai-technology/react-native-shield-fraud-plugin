@@ -1,31 +1,12 @@
-require 'active_support/core_ext/object/blank'
-require_relative '../node_modules/react-native/scripts/react_native_pods'
-require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
-
-def patch_react_native_boost_source!
-  boost_podspec_path = File.join(__dir__, '..', 'node_modules', 'react-native', 'third-party-podspecs', 'boost.podspec')
-  return unless File.exist?(boost_podspec_path)
-
-  boost_jfrog_url = 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
-  boost_archive_url = 'https://archives.boost.io/release/1.76.0/source/boost_1_76_0.tar.bz2'
-
-  podspec = File.read(boost_podspec_path)
-  return unless podspec.include?(boost_jfrog_url)
-
-  File.write(boost_podspec_path, podspec.gsub(boost_jfrog_url, boost_archive_url))
-  Pod::UI.puts "Patched React Native boost source to #{boost_archive_url}".green
-end
-
-patch_react_native_boost_source!
-
-# Disable Flipper when New Architecture is enabled — Flipper has known
-# incompatibilities with Turbo Modules / Fabric in RN 0.71.
-flipper_config = (ENV['NO_FLIPPER'] == "1" || ENV['RCT_NEW_ARCH_ENABLED'] == "1") \
-  ? FlipperConfiguration.disabled \
-  : FlipperConfiguration.enabled(["Debug"], { 'Flipper' => '0.250.0' })
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
@@ -36,48 +17,40 @@ end
 target 'ShieldFraudPluginExample' do
   config = use_native_modules!
 
-  # Flags change depending on the env values.
-  # Set RCT_NEW_ARCH_ENABLED=1 before `pod install` to enable New Architecture.
-  flags = get_default_flags()
-
   use_react_native!(
     :path => config[:reactNativePath],
-    :hermes_enabled => flags[:hermes_enabled],
-    :fabric_enabled => flags[:fabric_enabled],
-    # Use the flipper_config variable so Flipper is automatically disabled
-    # when RCT_NEW_ARCH_ENABLED=1 is set.
-    :flipper_configuration => flipper_config,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
   target 'ShieldFraudPluginExampleTests' do
     inherit! :complete
-    # Pods for testing
   end
 
   post_install do |installer|
     react_native_post_install(
       installer,
+      config[:reactNativePath],
       :mac_catalyst_enabled => false
     )
-    # Guard against newer Xcode versions where this workaround was removed.
-    if installer.respond_to?(:__apply_Xcode_12_5_M1_post_install_workaround)
-      __apply_Xcode_12_5_M1_post_install_workaround(installer)
-    end
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', '_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION']
-        if target.name == 'Yoga'
-          config.build_settings['CLANG_WARN_DEPRECATED_LITERAL_OPERATOR'] = 'NO'
-        end
-      end
-      if target.name == 'Yoga'
-        target.source_build_phase.files.each do |file|
-          flags = file.settings && file.settings['COMPILER_FLAGS']
-          next unless flags&.include?('-Werror')
 
-          file.settings['COMPILER_FLAGS'] = "#{flags} -Wno-error=deprecated-literal-operator"
-        end
+    # RN 0.79.6 bundles fmt 11.0.2, whose consteval path fails with Xcode 26.4.
+    fmt_base = File.join(
+      installer.sandbox.pod_dir('fmt'),
+      'include',
+      'fmt',
+      'base.h'
+    )
+
+    if File.exist?(fmt_base)
+      content = File.read(fmt_base)
+      patched = content.gsub(
+        /^#\s*define FMT_USE_CONSTEVAL 1$/,
+        '#  define FMT_USE_CONSTEVAL 0'
+      )
+
+      if patched != content
+        File.chmod(0644, fmt_base)
+        File.write(fmt_base, patched)
       end
     end
   end
