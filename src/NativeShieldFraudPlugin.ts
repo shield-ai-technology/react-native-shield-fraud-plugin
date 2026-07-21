@@ -13,6 +13,7 @@ export interface Spec extends TurboModule {
   initShield(
     siteID: string,
     secretKey: string,
+    partnerId: string | null,
     isOptimizedListener: boolean,
     blockedDialog: Object | null,
     logLevel: number,
@@ -38,11 +39,6 @@ export interface Spec extends TurboModule {
    * Returns whether the SDK has been initialized synchronously.
    */
   isShieldInitialized(): boolean;
-
-  /**
-   * Registers a listener for the device-result-ready state event.
-   */
-  setDeviceResultStateListener(): void;
 
   /**
    * Sends custom attributes for a given screen name.

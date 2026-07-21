@@ -44,7 +44,7 @@ import java.util.Map;
  * 1. Initialisation     : Shield.Builder  →  ShieldConfig + ShieldFactory
  * 2. Instance access    : Shield.getInstance()  →  stored `shield` member
  * 3. Session ID         : Shield.getInstance().getSessionId()  →  shield.getSessionId()
- * 4. Device results     : setDeviceResultStateListener(callback)
+ * 4. Device results     : manual readiness subscription
  *                           →  ShieldFactory.createShieldWithCallback (SHIELD Sentinel)
  * 5. sendAttributes     : void return
  *                           →  shield.sendAttributesWithCallback (Result<String> callback)
@@ -116,6 +116,7 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
     public void initShield(
             String siteID,
             String secretKey,
+            @Nullable String partnerId,
             boolean isOptimizedListener,
             @Nullable ReadableMap blockedDialog,
             double logLevel,
@@ -133,6 +134,9 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
         ShieldConfig config = new ShieldConfig(siteID, secretKey);
         config.setLogLevel(getLogLevelFromInt((int) logLevel));
         config.setEnvironment(getEnvironmentFromInt((int) environmentInfo));
+        if (partnerId != null) {
+            config.setPartnerId(partnerId);
+        }
 
         if (blockedDialog != null) {
             String title = blockedDialog.hasKey("title") ? blockedDialog.getString("title") : null;
@@ -147,8 +151,8 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
 
         if (isOptimizedListener) {
             // SDK 2.x: createShieldWithCallback initialises + acts as the Sentinel.
-            // Unlike 1.x (which required a separate setDeviceResultStateListener() call
-            // on the SDK), 2.x fires this callback automatically when device intelligence
+            // Unlike 1.x (which required a separate readiness subscription),
+            // 2.x fires this callback automatically when device intelligence
             // is ready and on every subsequent risk-profile change.
             // The callback may arrive on a background thread — always post to main looper.
             shield = ShieldFactory.createShieldWithCallback(
@@ -159,7 +163,7 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
                             DeviceIntelligence di =
                                     ((Result.Success<DeviceIntelligence>) result).getData();
                             JSONObject json = di != null ? di.getData() : null;
-                            emitEvent("success", json != null ? json.toString() : null);
+                            emitEvent("success", json != null ? toWritableMap(json) : null);
                         } else if (result instanceof Result.Failure) {
                             ShieldError error =
                                     ((Result.Failure<DeviceIntelligence>) result).getError();
@@ -184,23 +188,6 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
         ShieldCrossPlatformParams params =
                 new ShieldCrossPlatformParams(crossPlatformName, crossPlatformVersion);
         ShieldCrossPlatformHelper.setCrossPlatformParameters(params);
-    }
-
-    // =========================================================================
-    // setDeviceResultStateListener — no-op stub (SDK 2.x)
-    //
-    // SDK 1.x required a manual subscription call + Handler.postDelayed workaround.
-    // SDK 2.x fires device result events automatically via createShieldWithCallback
-    // when isOptimizedListener == true — no subscription call needed.
-    //
-    // The method is kept as a no-op stub so the shared TypeScript codegen spec
-    // and iOS (which still calls the SDK method) remain unaffected.
-    // =========================================================================
-
-    @ReactMethod
-    public void setDeviceResultStateListener() {
-        // No-op on Android SDK 2.x — device result events are delivered
-        // automatically through the createShieldWithCallback Sentinel.
     }
 
     // =========================================================================
@@ -301,7 +288,11 @@ public class ShieldFraudPluginModule extends com.shieldfraudplugin.ShieldFraudPl
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
                     if (result instanceof Result.Success) {
                         JSONObject json = shield.getLatestDeviceResult();
-                        successCallback.invoke(json != null ? toWritableMap(json) : null);
+                        if (json != null) {
+                            successCallback.invoke(toWritableMap(json));
+                        } else {
+                            errorCallback.invoke("No device result available.");
+                        }
                     } else if (result instanceof Result.Failure) {
                         ShieldError error = ((Result.Failure<String>) result).getError();
                         errorCallback.invoke(error != null

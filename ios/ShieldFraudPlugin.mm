@@ -1,16 +1,15 @@
 #import "ShieldFraudPlugin.h"
 
-// Import the auto-generated Swift→ObjC header.
-// This exposes all Swift-exported types (Configuration, Shield, BlockedDialog,
-// LogLevel, Environment, ShieldCrossPlatformHelper, DeviceShieldCallback, …)
-// without requiring Clang module syntax (@import), which fails in Obj-C++ files
-// when C++ modules are not enabled (e.g. when the New Architecture codegen
-// headers are included and the file is compiled as Obj-C++).
+// ShieldFraud is Swift-based, but this source must remain Objective-C++ for
+// React Native's New Architecture. Importing the generated Objective-C header
+// avoids forcing -fcxx-modules on consumers that link the plugin statically.
 #import <ShieldFraud/ShieldFraud-Swift.h>
 
-@implementation ShieldFraudPlugin
+@interface ShieldFraudPlugin ()
+@property (nonatomic, strong) id<Shield> shield;
+@end
 
-static BOOL isShieldInitialized = NO;
+@implementation ShieldFraudPlugin
 
 RCT_EXPORT_MODULE();
 
@@ -36,40 +35,35 @@ RCT_EXPORT_METHOD(setCrossPlatformParameters:(NSString *)crossPlatformName
 RCT_EXPORT_METHOD(getLatestDeviceResult:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
-    NSDictionary<NSString *, id> *result = [[Shield shared] getLatestDeviceResult];
-    if (result != nil) {
-        successCallback(@[result]);
+    if (self.shield == nil) {
+        errorCallback(@[@"Shield SDK is not initialized."]);
         return;
     }
 
-    NSError *error = [[Shield shared] getErrorResponse];
-    if (error != nil) {
-        errorCallback(@[[error localizedDescription]]);
+    DeviceIntelligence *deviceIntelligence = [self.shield getLatestDeviceResult];
+    if (deviceIntelligence != nil) {
+        successCallback(@[deviceIntelligence.data]);
         return;
     }
 
     errorCallback(@[@"No device result available yet."]);
 }
 
-// Subscribe to real-time device-result state changes
-RCT_EXPORT_METHOD(setDeviceResultStateListener)
-{
-    double delayInSeconds = 1.5;
-    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW,
-                                            (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    dispatch_after(popTime, dispatch_get_main_queue(), ^(void) {
-        [[Shield shared] setDeviceResultStateListener:^{
-            [self sendEventWithName:@"device_result_state"
-                              body:@{@"status": @"isSDKReady"}];
-        }];
-    });
-}
-
 // Attach arbitrary screen-level attributes
 RCT_EXPORT_METHOD(sendAttributes:(NSString *)screenName
                   data:(NSDictionary *)data)
 {
-    [[Shield shared] sendAttributesWithScreenName:screenName data:data];
+    if (self.shield == nil) {
+        return;
+    }
+
+    [self.shield sendAttributesWithScreenName:screenName
+                                         data:[self stringAttributesFromDictionary:data]
+                                   completion:^(NSString *sessionId, ShieldError *error) {
+        if (error != nil) {
+            [self sendEventWithName:@"error" body:error.errorMessage];
+        }
+    }];
 }
 
 RCT_EXPORT_METHOD(sendAttributesWithCallback:(NSString *)screenName
@@ -77,60 +71,65 @@ RCT_EXPORT_METHOD(sendAttributesWithCallback:(NSString *)screenName
                   successCallback:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
-    [[Shield shared] sendAttributesWithScreenName:screenName
-                                             data:data
-                                                :^(BOOL success, NSError *error) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (success) {
-                successCallback(@[@(YES)]);
-                return;
-            }
+    if (self.shield == nil) {
+        errorCallback(@[@"Shield SDK is not initialized."]);
+        return;
+    }
 
-            NSString *errorMessage = error != nil
-                ? [error localizedDescription]
-                : @"Failed to send attributes.";
-            errorCallback(@[errorMessage]);
-        });
+    [self.shield sendAttributesWithScreenName:screenName
+                                         data:[self stringAttributesFromDictionary:data]
+                                   completion:^(NSString *sessionId, ShieldError *error) {
+        if (sessionId != nil) {
+            successCallback(@[@(YES)]);
+            return;
+        }
+
+        NSString *errorMessage = error != nil
+            ? error.errorMessage
+            : @"Failed to send attributes.";
+        errorCallback(@[errorMessage]);
     }];
 }
 
 // Trigger a device signature computation for a given screen name.
 // Pass userId to associate the result with a specific user.
-// The completionHandler fires when the SDK is done; results and errors
-// are read back from getLatestDeviceResult / getErrorResponse.
+// The 2.x completion returns a session ID or ShieldError. On success, return
+// the latest DeviceIntelligence payload to preserve the React Native API.
 RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
                   userId:(NSString * _Nullable)userId
                   successCallback:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
+    if (self.shield == nil) {
+        errorCallback(@[@"Shield SDK is not initialized."]);
+        return;
+    }
+
     ShieldUserData *userData = [[ShieldUserData alloc]
                                     initWithScreenName:screenName
                                     userId:userId];
 
-    [[Shield shared] sendDeviceSignatureWithUserData:userData
-                                  completionHandler:^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSDictionary<NSString *, id> *deviceResult = [[Shield shared] getLatestDeviceResult];
-            if (deviceResult != nil) {
-                successCallback(@[deviceResult]);
-                return;
-            }
+    [self.shield sendDeviceSignatureWithUserData:userData
+                                      completion:^(NSString *sessionId, ShieldError *error) {
+        if (error != nil) {
+            errorCallback(@[error.errorMessage]);
+            return;
+        }
 
-            NSError *error = [[Shield shared] getErrorResponse];
-            if (error != nil) {
-                errorCallback(@[[error localizedDescription]]);
-                return;
-            }
+        DeviceIntelligence *deviceIntelligence = [self.shield getLatestDeviceResult];
+        if (sessionId != nil && deviceIntelligence != nil) {
+            successCallback(@[deviceIntelligence.data]);
+            return;
+        }
 
-            errorCallback(@[@"No device result available."]);
-        });
+        errorCallback(@[@"No device result available."]);
     }];
 }
 
 // RCTEventEmitter — declare the events this module can emit
 - (NSArray<NSString *> *)supportedEvents
 {
-    return @[@"success", @"error", @"device_result_state"];
+    return @[@"success", @"error"];
 }
 
 // RCTEventEmitter — required overrides (no-op wrappers keep the base class happy)
@@ -144,15 +143,95 @@ RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
     [super removeListeners:count];
 }
 
-// DeviceShieldCallback delegate — forwarded as JS events
-- (void)didErrorWithError:(NSError *)error
+// =============================================================================
+// MARK: - ShieldFraud 2.x helpers
+// =============================================================================
+
+- (void)initializeShieldWithSiteID:(NSString *)siteID
+                         secretKey:(NSString *)secretKey
+                         partnerId:(NSString * _Nullable)partnerId
+               optimizedListener:(BOOL)isOptimizedListener
+                    blockedDialog:(NSDictionary * _Nullable)blockedDialog
+                         logLevel:(NSInteger)logLevel
+                  environmentInfo:(NSInteger)environmentInfo
 {
-    [self sendEventWithName:@"error" body:[error localizedDescription]];
+    if (self.shield != nil) {
+        return;
+    }
+
+    ShieldConfig *config = [[ShieldConfig alloc] initWithSiteId:siteID
+                                                       secretKey:secretKey];
+    config.logLevel = [self logLevelFromInteger:logLevel];
+    config.environment = [self environmentFromInteger:environmentInfo];
+    if (partnerId != nil) {
+        config.partnerId = partnerId;
+    }
+
+    if (blockedDialog != nil) {
+        NSString *title = [blockedDialog objectForKey:@"title"];
+        NSString *body = [blockedDialog objectForKey:@"body"];
+        if (title != nil && body != nil) {
+            config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title body:body];
+        }
+    }
+
+    self.shield = [ShieldFactory createShieldWithConfig:config];
+
+    if (isOptimizedListener) {
+        __weak ShieldFraudPlugin *weakSelf = self;
+        [self.shield onDeviceResultWithHandler:^(DeviceIntelligence *deviceIntelligence,
+                                                 ShieldError *error) {
+            ShieldFraudPlugin *strongSelf = weakSelf;
+            if (strongSelf == nil) {
+                return;
+            }
+
+            if (deviceIntelligence != nil) {
+                [strongSelf sendEventWithName:@"success" body:deviceIntelligence.data];
+                return;
+            }
+
+            if (error != nil) {
+                [strongSelf sendEventWithName:@"error" body:error.errorMessage];
+            }
+        }];
+    }
 }
 
-- (void)didSuccessWithResult:(NSDictionary<NSString *, id> *)result
+- (NSDictionary<NSString *, NSString *> *)stringAttributesFromDictionary:(NSDictionary *)data
 {
-    [self sendEventWithName:@"success" body:result];
+    NSMutableDictionary<NSString *, NSString *> *attributes = [NSMutableDictionary dictionary];
+    [data enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+        if ([key isKindOfClass:[NSString class]] && [value isKindOfClass:[NSString class]]) {
+            attributes[key] = value;
+        }
+    }];
+    return attributes;
+}
+
+- (LogLevel)logLevelFromInteger:(NSInteger)logLevel
+{
+    switch (logLevel) {
+        case 4:
+        case 3:
+            return LogLevelDebug;
+        case 2:
+            return LogLevelInfo;
+        default:
+            return LogLevelNone;
+    }
+}
+
+- (Environment)environmentFromInteger:(NSInteger)environmentInfo
+{
+    switch (environmentInfo) {
+        case 1:
+            return EnvironmentDev;
+        case 2:
+            return EnvironmentStag;
+        default:
+            return EnvironmentProd;
+    }
 }
 
 
@@ -181,6 +260,7 @@ RCT_EXPORT_METHOD(sendDeviceSignature:(NSString *)screenName
 
 - (void)initShield:(NSString *)siteID
          secretKey:(NSString *)secretKey
+         partnerId:(NSString * _Nullable)partnerId
 isOptimizedListener:(BOOL)isOptimizedListener
      blockedDialog:(NSDictionary * _Nullable)blockedDialog
           logLevel:(double)logLevel
@@ -189,38 +269,24 @@ blockScreenRecording:(BOOL)blockScreenRecording
            resolve:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject
 {
-    if (!isShieldInitialized) {
-        Configuration *config = [[Configuration alloc] initWithSiteId:siteID
-                                                            secretKey:secretKey];
-        if (isOptimizedListener) {
-            config.deviceShieldCallback = self;
-        }
-
-        if (blockedDialog != nil) {
-            NSString *title = [blockedDialog objectForKey:@"title"];
-            NSString *body  = [blockedDialog objectForKey:@"body"];
-            config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title
-                                                                          body:body];
-        }
-
-        // JS numbers arrive as double; cast explicitly to Swift-bridged enum types.
-        config.logLevel    = (LogLevel)(NSInteger)logLevel;
-        config.environment = (Environment)(NSInteger)environmentInfo;
-
-        [Shield setUpWith:config];
-        isShieldInitialized = YES;
-    }
+    [self initializeShieldWithSiteID:siteID
+                           secretKey:secretKey
+                           partnerId:partnerId
+                  optimizedListener:isOptimizedListener
+                       blockedDialog:blockedDialog
+                            logLevel:(NSInteger)logLevel
+                     environmentInfo:(NSInteger)environmentInfo];
     resolve(nil);
 }
 
 - (NSString *)getSessionId
 {
-    return [[Shield shared] sessionId];
+    return self.shield != nil ? self.shield.sessionId : @"";
 }
 
 - (NSNumber *)isShieldInitialized
 {
-    return @(isShieldInitialized);
+    return @(self.shield != nil);
 }
 
 // Wires this Obj-C class into the JSI runtime.
@@ -243,51 +309,40 @@ blockScreenRecording:(BOOL)blockScreenRecording
 //
 // Key differences from New Arch:
 //   • initShield  — logLevel/environmentInfo are NSInteger (bridge coerces
-//                   from NSNumber); no resolve/reject (bridge wraps the void
-//                   return automatically).
+//                   from NSNumber); resolve/reject expose Promise<void> to JS.
 //   • getSessionId / isShieldInitialized — must use the blocking-synchronous
 //                   macro so the bridge returns the value to JS synchronously.
 // -----------------------------------------------------------------------------
 
 RCT_EXPORT_METHOD(initShield:(NSString *)siteID
                   secretKey:(NSString *)secretKey
+                  partnerId:(NSString * _Nullable)partnerId
                   isOptimizedListener:(BOOL)isOptimizedListener
                   blockedDialog:(NSDictionary *)blockedDialog
                   logLevel:(NSInteger)logLevel
                   environmentInfo:(NSInteger)environmentInfo
-                  blockScreenRecording:(BOOL)blockScreenRecording)
+                  blockScreenRecording:(BOOL)blockScreenRecording
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
 {
-    if (!isShieldInitialized) {
-        Configuration *config = [[Configuration alloc] initWithSiteId:siteID
-                                                            secretKey:secretKey];
-        if (isOptimizedListener) {
-            config.deviceShieldCallback = self;
-        }
-
-        if (blockedDialog != nil) {
-            NSString *title = [blockedDialog objectForKey:@"title"];
-            NSString *body  = [blockedDialog objectForKey:@"body"];
-            config.defaultBlockedDialog = [[BlockedDialog alloc] initWithTitle:title
-                                                                          body:body];
-        }
-
-        // Cast NSInteger to Swift-bridged enum types explicitly.
-        config.logLevel    = (LogLevel)logLevel;
-        config.environment = (Environment)environmentInfo;
-
-        [Shield setUpWith:config];
-        isShieldInitialized = YES;
-    }
+    [self initializeShieldWithSiteID:siteID
+                           secretKey:secretKey
+                           partnerId:partnerId
+                  optimizedListener:isOptimizedListener
+                       blockedDialog:blockedDialog
+                            logLevel:logLevel
+                     environmentInfo:environmentInfo];
+    resolve(nil);
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getSessionId)
 {
-    return [[Shield shared] sessionId];
+    return self.shield != nil ? self.shield.sessionId : @"";
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isShieldInitialized)
 {
-    return @(isShieldInitialized);
+    return @(self.shield != nil);
 }
 
 #endif  // RCT_NEW_ARCH_ENABLED
