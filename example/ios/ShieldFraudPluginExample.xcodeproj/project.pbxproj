@@ -11,10 +11,10 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		28C63EAABB6ACA1390CF9DBB /* Pods_ShieldFraudPluginExample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2960FFE586F280E577D852CB /* Pods_ShieldFraudPluginExample.framework */; };
+		6B0B718BDE82E676E011F9FA /* Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 010DCED630C63CA53A509DD7 /* Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework */; };
 		8141F03E2B922EB592E92C9C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		98CB464E3548908B006F7192 /* libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 15110F7CA4D2853EEE92763D /* libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a */; };
-		F83D9425084AF295D92608A0 /* libPods-ShieldFraudPluginExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B13D94DCE1A997F3FEA759B1 /* libPods-ShieldFraudPluginExample.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +31,7 @@
 		00E356EE1AD99517003FC87E /* ShieldFraudPluginExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShieldFraudPluginExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* ShieldFraudPluginExampleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ShieldFraudPluginExampleTests.m; sourceTree = "<group>"; };
+		010DCED630C63CA53A509DD7 /* Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		05F6D7DE242998AE1EE5A48F /* Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.release.xcconfig"; path = "Target Support Files/Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests/Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.release.xcconfig"; sourceTree = "<group>"; };
 		0F0E414FA0B30C1B2D2EC70F /* Pods-ShieldFraudPluginExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShieldFraudPluginExample.debug.xcconfig"; path = "Target Support Files/Pods-ShieldFraudPluginExample/Pods-ShieldFraudPluginExample.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* ShieldFraudPluginExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShieldFraudPluginExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -40,11 +41,10 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ShieldFraudPluginExample/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = ShieldFraudPluginExample/main.m; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = ShieldFraudPluginExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		15110F7CA4D2853EEE92763D /* libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2960FFE586F280E577D852CB /* Pods_ShieldFraudPluginExample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ShieldFraudPluginExample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		30963B2B29B9700000A01396 /* Pods-ShieldFraudPluginExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShieldFraudPluginExample.release.xcconfig"; path = "Target Support Files/Pods-ShieldFraudPluginExample/Pods-ShieldFraudPluginExample.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ShieldFraudPluginExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ADB0DD53C7082E539ABB64BA /* Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.debug.xcconfig"; path = "Target Support Files/Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests/Pods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.debug.xcconfig"; sourceTree = "<group>"; };
-		B13D94DCE1A997F3FEA759B1 /* libPods-ShieldFraudPluginExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ShieldFraudPluginExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -53,7 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				98CB464E3548908B006F7192 /* libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a in Frameworks */,
+				6B0B718BDE82E676E011F9FA /* Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -61,7 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F83D9425084AF295D92608A0 /* libPods-ShieldFraudPluginExample.a in Frameworks */,
+				28C63EAABB6ACA1390CF9DBB /* Pods_ShieldFraudPluginExample.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,8 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				B13D94DCE1A997F3FEA759B1 /* libPods-ShieldFraudPluginExample.a */,
-				15110F7CA4D2853EEE92763D /* libPods-ShieldFraudPluginExample-ShieldFraudPluginExampleTests.a */,
+				2960FFE586F280E577D852CB /* Pods_ShieldFraudPluginExample.framework */,
+				010DCED630C63CA53A509DD7 /* Pods_ShieldFraudPluginExample_ShieldFraudPluginExampleTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
