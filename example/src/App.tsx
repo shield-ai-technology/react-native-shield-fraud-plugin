@@ -14,8 +14,7 @@ const App = () => {
   useEffect(() => {
     const initializeShield = async () => {
       // ------------------------------------------------------------------
-      // Use callbacks for logging and live SDK events, and use isSDKready()
-      // as the single readiness gate for post-init work on both platforms.
+      // Use callbacks for logging and live SDK events.
       // ------------------------------------------------------------------
       const callbacks: ShieldCallback = {
         onSuccess: (data) => {
@@ -42,19 +41,15 @@ const App = () => {
 
       await ShieldFraud.initShield(config, callbacks);
 
-      // Use the same SDK-ready gate on Android and iOS.
-      ShieldFraud.isSDKready(async (isReady: boolean) => {
-        if (isReady) {
-          await runPostInitCalls();
-        } else {
-          console.log('[Shield] SDK is not ready');
-        }
-      });
+      if (ShieldFraud.isShieldInitialized()) {
+        await runPostInitCalls();
+      } else {
+        console.log('[Shield] SDK is not initialized');
+      }
     };
 
     // ------------------------------------------------------------------
-    // Post-init calls — same logic for both platforms, called from
-    // the shared isSDKready callback.
+    // Post-init calls — same logic for both platforms.
     // ------------------------------------------------------------------
     const runPostInitCalls = async () => {
       // Session ID

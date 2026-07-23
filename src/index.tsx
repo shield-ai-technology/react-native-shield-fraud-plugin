@@ -39,6 +39,7 @@ export enum EnvironmentInfo {
 export interface Config {
   siteID: string;
   secretKey: string;
+  partnerId?: string | null;
   blockedDialog?: {
     title: string;
     body: string;
@@ -73,7 +74,7 @@ export type ShieldCallback = {
 
 /**
  * The `ShieldFraud` class is a wrapper for the ShieldFraudPlugin native module in React Native.
- * It provides methods for initializing ShieldFraud, retrieving session ID, checking the SDK readiness,
+ * It provides methods for initializing ShieldFraud, retrieving session ID,
  * sending attributes, and getting the latest device result.
  */
 class ShieldFraud {
@@ -106,6 +107,14 @@ class ShieldFraud {
     config: Config,
     callbacks?: ShieldCallback
   ): Promise<void> {
+    if (!config.siteID) {
+      throw new Error('siteId must not be empty');
+    }
+
+    if (!config.secretKey) {
+      throw new Error('secretKey must not be empty');
+    }
+
     const isOptimizedListener = !!callbacks;
 
     // Set default values if logLevel is not provided
@@ -124,21 +133,23 @@ class ShieldFraud {
     const blockScreenRecording =
       Platform.OS === 'android' ? config.blockScreenRecording ?? false : false;
 
+    if (isOptimizedListener) {
+      // Register JS listeners before native initialization because ShieldFraud may
+      // deliver a cached device result immediately when its handler is registered.
+      ShieldFraud.listeners(callbacks);
+    }
+
     // Call the native method to initialize ShieldFraud with the provided configuration.
     await ShieldFraud.PlatformWrapper.initShield(
       config.siteID,
       config.secretKey,
+      config.partnerId ?? null,
       isOptimizedListener,
       config.blockedDialog ?? null,
       logLevel,
       environmentInfo,
       blockScreenRecording
     );
-
-    if (isOptimizedListener) {
-      // Set up listeners for success and error events if callbacks are provided.
-      ShieldFraud.listeners(callbacks);
-    }
   }
 
   /**
@@ -197,57 +208,6 @@ class ShieldFraud {
    */
   public static isShieldInitialized(): boolean {
     return ShieldFraud.PlatformWrapper.isShieldInitialized();
-  }
-
-  /**
-   * Checks if the ShieldFraud SDK is ready and invokes the provided callback
-   * with the readiness state.
-   *
-   * On Android, readiness is approximated by the native initialization state
-   * to preserve backward compatibility without reporting ready before init.
-   *
-   * @param callback - A callback function to be invoked with the readiness state.
-   *   - `isReady` (boolean): true when the SDK has produced a device result.
-   */
-  public static async isSDKready(
-    callback: (isReady: boolean) => void
-  ): Promise<void> {
-    if (Platform.OS === 'android') {
-      const isInitialized = await this.isShieldInitialized();
-      callback(isInitialized);
-      return;
-    }
-
-    try {
-      // Adding a timeout of 100 milliseconds
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const isInitialized = await this.isShieldInitialized();
-
-      if (!isInitialized) {
-        console.log('Shield SDK not initialized:');
-        callback(false);
-        return;
-      }
-
-      const deviceResultListener = (event: { status: string }) => {
-        if (event.status === 'isSDKReady') {
-          ShieldFraud.eventEmitter.removeAllListeners('device_result_state');
-          callback(true);
-        }
-      };
-
-      ShieldFraud.eventEmitter.addListener(
-        'device_result_state',
-        deviceResultListener
-      );
-
-      // Trigger the SDK subscription — iOS 1.x requires this explicit call.
-      ShieldFraud.PlatformWrapper.setDeviceResultStateListener();
-    } catch (error) {
-      console.error('An error occurred:', error);
-      callback(false);
-    }
   }
 
   /**
