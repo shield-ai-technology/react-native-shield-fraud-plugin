@@ -19,7 +19,7 @@ def packageJson = new groovy.json.JsonSlurper().parseText(
   new File("${project.projectDir}/../package.json").text
 )
 def isFullPlugin = packageJson.name == "react-native-shield-full-plugin"
-def shieldSdkArtifact = isFullPlugin ? "com.shield.android:shield:2.6.1" : "com.shield.android:shield-fraud:2.6.1"
+def shieldSdkArtifact = isFullPlugin ? "com.shield.android:shield:2.7.0" : "com.shield.android:shield-fraud:2.7.0"
 
 apply plugin: "com.android.library"
 
