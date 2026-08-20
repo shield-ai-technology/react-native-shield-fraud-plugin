@@ -1332,7 +1332,7 @@ PODS:
     - React-jsiexecutor
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
-  - react-native-shield-fraud-plugin (2.4.0):
+  - react-native-shield-fraud-plugin (2.4.1):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1947,7 +1947,7 @@ SPEC CHECKSUMS:
   React-logger: 1426d04b594a2e68b0ac2add21d45422d06397a3
   React-Mapbuffer: 28c35d4355981ed4a9da6b13bd7f38189533ae05
   React-microtasksnativemodule: e46cff912b07dc383f04715b4225ca131b325a4a
-  react-native-shield-fraud-plugin: 3504f891a1ee7bb435929e218f73a6ccdddc5fc9
+  react-native-shield-fraud-plugin: 45a333c9c16d5e890fd98383fcde73d60216c0d0
   React-NativeModulesApple: 3e3e6bf35c6ba5d0aa785e899087385821fa78bd
   React-oscompat: 56b4766e96b06843a3af49a6763ef40992e720aa
   React-perflogger: 8fe9ec5f9ddbab1b8906c1aec159aa946e0ba041
