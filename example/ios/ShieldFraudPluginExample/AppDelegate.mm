@@ -1,7 +1,13 @@
 #import "AppDelegate.h"
 
 #import <React/RCTBundleURLProvider.h>
+#if __has_include(<React_RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>)
 #import <React_RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
+#elif __has_include(<React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>)
+#import <React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
+#else
+#import <React/RCTDefaultReactNativeFactoryDelegate.h>
+#endif
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 
 @interface ReactNativeDelegate : RCTDefaultReactNativeFactoryDelegate

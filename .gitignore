@@ -128,3 +128,4 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+example/shield-output.json
