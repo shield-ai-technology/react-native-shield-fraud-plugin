@@ -5,7 +5,7 @@ const path = require('path');
 const { spawn, execFileSync, execSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const configPath = path.join(ROOT, 'example', 'shield-config.json');
+const configPath = path.join(ROOT, 'shield-config.json');
 const appPath = path.join(ROOT, 'example', 'src', 'App.tsx');
 const appBackupPath = path.join(ROOT, 'example', 'src', 'App.tsx.backup');
 const gradlePath = path.join(ROOT, 'android', 'build.gradle');
@@ -585,7 +585,7 @@ const main = async () => {
       }
     }
     // Stage config and helper fixes
-    execSync('git add example/shield-config.json', { cwd: ROOT });
+    execSync('git add shield-config.json', { cwd: ROOT });
     if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'ShieldFraudPluginExample', 'Info.plist'))) {
       execSync('git add example/ios/ShieldFraudPluginExample/Info.plist', { cwd: ROOT });
     }
@@ -628,6 +628,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  configPath,
   createRunArgs,
   ensureAndroidEmulator,
   ensureIosSimulator,

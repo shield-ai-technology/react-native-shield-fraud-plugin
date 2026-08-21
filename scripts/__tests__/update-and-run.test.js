@@ -1,5 +1,6 @@
 const {
   createRunArgs,
+  configPath,
   ensureAndroidEmulator,
   ensureIosSimulator,
   isMetroRunning,
@@ -7,6 +8,10 @@ const {
 } = require('../update-and-run');
 
 describe('portable device preparation', () => {
+  test('loads shield configuration from the plugin root', () => {
+    expect(configPath).toBe(require('path').join(__dirname, '..', '..', 'shield-config.json'));
+  });
+
   test('normalizes commands with no output', () => {
     expect(normalizeCommandOutput(null)).toBe('');
   });
