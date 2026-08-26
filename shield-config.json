@@ -1,0 +1,6 @@
+{
+  "androidVersion": "2.7.0",
+  "iosVersion": "2.0.0",
+  "platform": "both",
+  "_platformDescription": "Supported values: android, ios, ios-static, ios-dynamic, both, or all. Omit platform to run every platform with a configured version."
+}
