@@ -5,6 +5,8 @@ const {
   ensureIosSimulator,
   isMetroRunning,
   normalizeCommandOutput,
+  podfileLockPath,
+  removePodfileLock,
 } = require('../update-and-run');
 
 describe('portable device preparation', () => {
@@ -86,3 +88,26 @@ describe('Metro lifecycle', () => {
     await expect(isMetroRunning({ probe })).resolves.toBe(true);
   });
 });
+
+describe('Podfile.lock lifecycle', () => {
+  test('resolves podfileLockPath in example/ios directory', () => {
+    expect(podfileLockPath).toBe(require('path').join(__dirname, '..', '..', 'example', 'ios', 'Podfile.lock'));
+  });
+
+  test('removes Podfile.lock when it exists', () => {
+    const fs = require('fs');
+    const existsSpy = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    const unlinkSpy = jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    removePodfileLock();
+
+    expect(unlinkSpy).toHaveBeenCalledWith(podfileLockPath);
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Deleted example/ios/Podfile.lock'));
+
+    existsSpy.mockRestore();
+    unlinkSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+});
+

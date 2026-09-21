@@ -10,6 +10,18 @@ const appPath = path.join(ROOT, 'example', 'src', 'App.tsx');
 const appBackupPath = path.join(ROOT, 'example', 'src', 'App.tsx.backup');
 const gradlePath = path.join(ROOT, 'android', 'build.gradle');
 const outputPath = path.join(ROOT, 'example', 'shield-output.json');
+const podfileLockPath = path.join(ROOT, 'example', 'ios', 'Podfile.lock');
+
+const removePodfileLock = () => {
+  if (fs.existsSync(podfileLockPath)) {
+    try {
+      fs.unlinkSync(podfileLockPath);
+      console.log('[Shield Script] ✓ Deleted example/ios/Podfile.lock');
+    } catch (err) {
+      console.warn('[Shield Script] Warning: Failed to delete Podfile.lock:', err.message);
+    }
+  }
+};
 
 // Load environment variables from .env file if it exists
 const loadDotenv = () => {
@@ -258,6 +270,8 @@ const verifyPlatform = async (platformKey) => {
 
   // B. Run pod install if iOS
   if (platformName === 'ios') {
+    removePodfileLock();
+
     console.log('[Shield Script] Running react-native codegen for iOS...');
     try {
       execSync('npx react-native codegen --platform ios --outputPath ios', {
@@ -271,7 +285,7 @@ const verifyPlatform = async (platformKey) => {
 
     console.log(`[Shield Script] Running pod install in example/ios directory with USE_FRAMEWORKS=${linkageType}...`);
     try {
-      execSync('bundle exec pod install', {
+      execSync('bundle exec pod install --repo-update', {
         cwd: path.join(ROOT, 'example', 'ios'),
         stdio: 'inherit',
         env: customEnv
@@ -485,6 +499,7 @@ const main = async () => {
         console.warn(`[Shield Script] Warning: ${specName} not found.`);
       }
     });
+    removePodfileLock();
   } else {
     console.log('[Shield Script] Skipping iOS dependency version update.');
   }
@@ -634,4 +649,6 @@ module.exports = {
   ensureIosSimulator,
   isMetroRunning,
   normalizeCommandOutput,
+  podfileLockPath,
+  removePodfileLock,
 };
