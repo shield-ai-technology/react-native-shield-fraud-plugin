@@ -36,4 +36,12 @@ if (!fs.existsSync(fraudBackup)) {
 
 fs.copyFileSync(src, pkgPath);
 console.log(`✓ package.json → ${variant} (react-native-shield-${variant}-plugin)`);
+
+// Gradle only regenerates autolinking when example/package.json, yarn.lock or
+// react-native.config.js change, so it would keep the previous variant's name.
+const autolinkingCache = path.join(ROOT, 'example', 'android', 'build', 'generated', 'autolinking');
+if (fs.existsSync(autolinkingCache)) {
+  fs.rmSync(autolinkingCache, { recursive: true, force: true });
+  console.log('✓ Cleared stale Android autolinking cache');
+}
 console.log(`\nRun: cd example && yarn android`);

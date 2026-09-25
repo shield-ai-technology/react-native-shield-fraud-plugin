@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const http = require('http');
+const net = require('net');
 const path = require('path');
 const { spawn, execFileSync, execSync } = require('child_process');
 
@@ -70,6 +71,17 @@ const readMetroStatus = () =>
 
 const isMetroRunning = async ({ probe = readMetroStatus } = {}) =>
   (await probe()).includes('packager-status:running');
+
+// A suspended (Ctrl+Z) or hung Metro still accepts TCP connections on 8081 but never answers,
+// which leaves the app on a white screen waiting for the bundle.
+const isPortInUse = (port = 8081) =>
+  new Promise(resolve => {
+    const socket = net.connect(port, '127.0.0.1');
+    socket.setTimeout(1000);
+    socket.once('connect', () => { socket.destroy(); resolve(true); });
+    socket.once('timeout', () => { socket.destroy(); resolve(false); });
+    socket.once('error', () => resolve(false));
+  });
 
 const parseIosDevices = output => {
   const devices = JSON.parse(output).devices || {};
@@ -547,6 +559,11 @@ const main = async () => {
   // 4. Reuse a running Metro Bundler or start one owned by this script.
   if (await isMetroRunning()) {
     console.log('[Shield Script] ✓ Metro Bundler is already running on port 8081. Reusing it.');
+  } else if (await isPortInUse(8081)) {
+    throw new Error(
+      'Port 8081 is in use but Metro is not responding (a suspended or hung Metro from a previous run?). ' +
+      'Find it with `lsof -nP -iTCP:8081 -sTCP:LISTEN`, kill it, then re-run.'
+    );
   } else {
     console.log('[Shield Script] Starting Metro Bundler in background...');
     metroProcess = spawn('npx', ['react-native', 'start', '--reset-cache'], {
@@ -648,6 +665,7 @@ module.exports = {
   ensureAndroidEmulator,
   ensureIosSimulator,
   isMetroRunning,
+  isPortInUse,
   normalizeCommandOutput,
   podfileLockPath,
   removePodfileLock,

@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "react-native-shield-fraud-plugin": ["../src/index"]
+      "react-native-shield-fraud-plugin": ["../src/index"],
+      "react-native-shield-full-plugin": ["../src/index"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
