@@ -19,5 +19,5 @@ Pod::Spec.new do |s|
   # and replaces the legacy `s.dependency "React"` call.
   install_modules_dependencies(s)
 
-  s.dependency "ShieldAlpha", "2.0.1"
+  s.dependency "ShieldAlpha", "2.1.0"
 end
