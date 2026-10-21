@@ -14,12 +14,18 @@ def isNewArchitectureEnabled() {
 }
 
 // Detect which npm package is installed by reading its own package.json.
-// When published as react-native-shield-full-plugin the name field differs.
+// When published as react-native-shield-full-plugin / react-native-shield-alpha-plugin the name field differs.
 def packageJson = new groovy.json.JsonSlurper().parseText(
   new File("${project.projectDir}/../package.json").text
 )
-def isFullPlugin = packageJson.name == "react-native-shield-full-plugin"
-def shieldSdkArtifact = isFullPlugin ? "com.shield.android:shield:2.8.0" : "com.shield.android:shield-fraud:2.8.0"
+def shieldSdkArtifact
+if (packageJson.name == "react-native-shield-full-plugin") {
+  shieldSdkArtifact = "com.shield.android:shield:2.8.0"
+} else if (packageJson.name == "react-native-shield-alpha-plugin") {
+  shieldSdkArtifact = "com.shield.android:shield-alpha:2.9.0"
+} else {
+  shieldSdkArtifact = "com.shield.android:shield-fraud:2.8.0"
+}
 
 apply plugin: "com.android.library"
 

@@ -180,8 +180,12 @@ describe('Podspec metadata', () => {
       path.join(__dirname, '../../react-native-shield-full-plugin.podspec'),
       'utf8'
     );
+    const alphaPodspec = fs.readFileSync(
+      path.join(__dirname, '../../react-native-shield-alpha-plugin.podspec'),
+      'utf8'
+    );
 
-    for (const podspec of [fraudPodspec, fullPodspec]) {
+    for (const podspec of [fraudPodspec, fullPodspec, alphaPodspec]) {
       expect(podspec).not.toContain('CLANG_ENABLE_MODULES');
       expect(podspec).not.toContain('OTHER_CPLUSPLUSFLAGS');
       expect(podspec).not.toContain('-fcxx-modules');

@@ -38,7 +38,8 @@
     "bump": "bash scripts/bump-version.sh",
     "publish-all": "node scripts/publish.js",
     "use-fraud": "node scripts/use-plugin.js fraud",
-    "use-full": "node scripts/use-plugin.js full"
+    "use-full": "node scripts/use-plugin.js full",
+    "use-alpha": "node scripts/use-plugin.js alpha"
   },
   "keywords": [
     "react-native",
