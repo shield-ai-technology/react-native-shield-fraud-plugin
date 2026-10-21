@@ -170,6 +170,12 @@ const ensureAndroidEmulator = ({ run = runCommand, spawn: spawnProcess = spawn, 
   return { serial: null, avd };
 };
 
+// `--platform=<value>` on the command line overrides shield-config.json's platform.
+const resolvePlatform = (argv, configPlatform) => {
+  const platformArg = argv.find(arg => arg.startsWith('--platform='));
+  return platformArg ? platformArg.slice('--platform='.length) : configPlatform;
+};
+
 const createRunArgs = (platformName, iosUdid) =>
   platformName === 'ios'
     ? ['react-native', 'run-ios', '--udid', iosUdid]
@@ -461,7 +467,8 @@ const main = async () => {
     process.exit(1);
   }
 
-  const { androidVersion, iosVersion, platform } = config;
+  const { androidVersion, iosVersion } = config;
+  const platform = resolvePlatform(process.argv.slice(2), config.platform);
   
   const shouldUpdateAndroid = !!androidVersion;
   const shouldUpdateIos = !!iosVersion;
@@ -669,4 +676,5 @@ module.exports = {
   normalizeCommandOutput,
   podfileLockPath,
   removePodfileLock,
+  resolvePlatform,
 };

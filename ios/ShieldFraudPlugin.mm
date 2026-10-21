@@ -3,7 +3,12 @@
 // ShieldFraud is Swift-based, but this source must remain Objective-C++ for
 // React Native's New Architecture. Importing the generated Objective-C header
 // avoids forcing -fcxx-modules on consumers that link the plugin statically.
+// The alpha variant depends on the ShieldAlpha pod instead of ShieldFraud.
+#if __has_include(<ShieldAlpha/ShieldAlpha-Swift.h>)
+#import <ShieldAlpha/ShieldAlpha-Swift.h>
+#else
 #import <ShieldFraud/ShieldFraud-Swift.h>
+#endif
 
 @interface ShieldFraudPlugin ()
 @property (nonatomic, strong) id<Shield> shield;

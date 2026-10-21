@@ -34,6 +34,7 @@ bump_json() {
 # ── Update package JSON files ─────────────────────────────────────────────────
 bump_json "$ROOT/package.json"
 bump_json "$ROOT/package.full.json"
+bump_json "$ROOT/package.alpha.json"
 
 [ -f "$ROOT/package.fraud.json" ] && bump_json "$ROOT/package.fraud.json"
 
@@ -45,7 +46,7 @@ echo "    1. Regenerate Podfile.lock (it pins the plugin version):"
 echo "       cd example/ios && bundle exec pod install && cd ../.."
 echo ""
 echo "    2. Commit everything:"
-echo "       git add package.json package.full.json package.fraud.json example/ios/Podfile.lock"
+echo "       git add package.json package.full.json package.alpha.json package.fraud.json example/ios/Podfile.lock"
 echo "       git commit -m \"chore: bump version to v$NEW_VERSION\""
 echo "       git tag v$NEW_VERSION"
 echo ""

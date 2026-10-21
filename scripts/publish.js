@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Publish both npm packages from this repo.
+ * Publish all npm packages from this repo.
  *
- *   node scripts/publish.js          — publish fraud then full
+ *   node scripts/publish.js          — publish fraud, full, then alpha
  *   node scripts/publish.js fraud    — publish fraud only
  *   node scripts/publish.js full     — publish full only
+ *   node scripts/publish.js alpha    — publish alpha only
  *
  * Each publish:
  *   1. Swaps the correct package.json into place
@@ -17,16 +18,13 @@ const { execSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const pkgPath = path.join(ROOT, 'package.json');
-const fraudPkgPath = path.join(ROOT, 'package.fraud.json');
-const fullPkgPath = path.join(ROOT, 'package.full.json');
+const VARIANTS = ['fraud', 'full', 'alpha'];
 
 const originalPkg = fs.readFileSync(pkgPath);
 
 function publish(variant) {
-  const srcPath = variant === 'full' ? fullPkgPath : fraudPkgPath;
-  const name = variant === 'full'
-    ? 'react-native-shield-full-plugin'
-    : 'react-native-shield-fraud-plugin';
+  const srcPath = path.join(ROOT, `package.${variant}.json`);
+  const name = `react-native-shield-${variant}-plugin`;
 
   if (!fs.existsSync(srcPath)) {
     throw new Error(`Missing ${path.basename(srcPath)} — run "yarn use-${variant}" once first to generate it.`);
@@ -39,10 +37,10 @@ function publish(variant) {
 }
 
 const variant = process.argv[2];
-const variants = variant ? [variant] : ['fraud', 'full'];
+const variants = variant ? [variant] : VARIANTS;
 
-if (variant && variant !== 'fraud' && variant !== 'full') {
-  console.error('Usage: node scripts/publish.js [fraud|full]');
+if (variant && !VARIANTS.includes(variant)) {
+  console.error(`Usage: node scripts/publish.js [${VARIANTS.join('|')}]`);
   process.exit(1);
 }
 

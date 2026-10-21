@@ -4,6 +4,7 @@
  *
  *   node scripts/use-plugin.js fraud   (default)
  *   node scripts/use-plugin.js full
+ *   node scripts/use-plugin.js alpha
  *
  * Only package.json is swapped. Everything else (native class names,
  * Android Java package, iOS class) stays the same — the build.gradle and
@@ -13,18 +14,17 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
+const VARIANTS = ['fraud', 'full', 'alpha'];
 const variant = process.argv[2];
 
-if (variant !== 'fraud' && variant !== 'full') {
-  console.error('Usage: node scripts/use-plugin.js <fraud|full>');
+if (!VARIANTS.includes(variant)) {
+  console.error(`Usage: node scripts/use-plugin.js <${VARIANTS.join('|')}>`);
   process.exit(1);
 }
 
-const src = variant === 'full'
-  ? path.join(ROOT, 'package.full.json')
-  : path.join(ROOT, 'package.fraud.json');
+const src = path.join(ROOT, `package.${variant}.json`);
 
-// On first run for fraud→full, back up the original package.json as package.fraud.json
+// On first run for fraud→full/alpha, back up the original package.json as package.fraud.json
 const pkgPath = path.join(ROOT, 'package.json');
 const fraudBackup = path.join(ROOT, 'package.fraud.json');
 

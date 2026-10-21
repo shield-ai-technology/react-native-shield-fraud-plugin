@@ -7,7 +7,18 @@ const {
   normalizeCommandOutput,
   podfileLockPath,
   removePodfileLock,
+  resolvePlatform,
 } = require('../update-and-run');
+
+describe('platform selection', () => {
+  test('uses the --platform argument over shield-config.json', () => {
+    expect(resolvePlatform(['--platform=ios'], 'both')).toBe('ios');
+  });
+
+  test('falls back to shield-config.json without a --platform argument', () => {
+    expect(resolvePlatform([], 'both')).toBe('both');
+  });
+});
 
 describe('portable device preparation', () => {
   test('loads shield configuration from the plugin root', () => {
