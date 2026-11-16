@@ -4,6 +4,7 @@ const http = require('http');
 const net = require('net');
 const path = require('path');
 const { spawn, execFileSync, execSync } = require('child_process');
+const { setIosSdkVersion } = require('./set-ios-sdk-version');
 
 const ROOT = path.join(__dirname, '..');
 const configPath = path.join(ROOT, 'shield-config.json');
@@ -12,6 +13,15 @@ const appBackupPath = path.join(ROOT, 'example', 'src', 'App.tsx.backup');
 const gradlePath = path.join(ROOT, 'android', 'build.gradle');
 const outputPath = path.join(ROOT, 'example', 'shield-output.json');
 const podfileLockPath = path.join(ROOT, 'example', 'ios', 'Podfile.lock');
+const packageResolvedPath = path.join(
+  ROOT,
+  'example',
+  'ios',
+  'ShieldFraudPluginExample.xcworkspace',
+  'xcshareddata',
+  'swiftpm',
+  'Package.resolved'
+);
 
 const removePodfileLock = () => {
   if (fs.existsSync(podfileLockPath)) {
@@ -500,24 +510,10 @@ const main = async () => {
   }
 
   if (shouldUpdateIos) {
-    const podspecFiles = [
-      'react-native-shield-fraud-plugin.podspec',
-      'react-native-shield-full-plugin.podspec'
-    ];
-    podspecFiles.forEach(specName => {
-      const specPath = path.join(ROOT, specName);
-      if (fs.existsSync(specPath)) {
-        let specContent = fs.readFileSync(specPath, 'utf8');
-        specContent = specContent.replace(
-          /(s\.dependency\s+["']ShieldFraud["'],\s+["'])\d+\.\d+\.\d+(["'])/g,
-          `$1${iosVersion}$2`
-        );
-        fs.writeFileSync(specPath, specContent);
-        console.log(`[Shield Script] ✓ Updated ${specName} to version ${iosVersion}`);
-      } else {
-        console.warn(`[Shield Script] Warning: ${specName} not found.`);
-      }
-    });
+    // iOS SDK 2.3.0+ ships through SPM only; the version lives in ios/shield_spm.rb
+    // (read by both podspecs) and Package.swift.
+    console.log(`[Shield Script] Setting ShieldFraud iOS SPM version to ${iosVersion}...`);
+    setIosSdkVersion(iosVersion, { log: line => console.log(`[Shield Script]${line}`) });
     removePodfileLock();
   } else {
     console.log('[Shield Script] Skipping iOS dependency version update.');
@@ -617,10 +613,17 @@ const main = async () => {
       execSync('git add android/build.gradle', { cwd: ROOT });
     }
     if (shouldUpdateIos) {
-      execSync('git add react-native-shield-fraud-plugin.podspec', { cwd: ROOT });
-      execSync('git add react-native-shield-full-plugin.podspec', { cwd: ROOT });
+      // Includes the plugin versions that setIosSdkVersion bumps on an SDK change.
+      execSync(
+        'git add ios/shield_spm.rb Package.swift package.json package.fraud.json package.full.json',
+        { cwd: ROOT }
+      );
       if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'Podfile.lock'))) {
         execSync('git add example/ios/Podfile.lock', { cwd: ROOT });
+      }
+      // Xcode's SPM lock file pins the exact ShieldFraud version; keep it in step.
+      if (fs.existsSync(packageResolvedPath)) {
+        execSync(`git add "${packageResolvedPath}"`, { cwd: ROOT });
       }
     }
     // Stage config and helper fixes
@@ -631,7 +634,7 @@ const main = async () => {
     if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'ShieldFraudPluginExample', 'AppDelegate.mm'))) {
       execSync('git add example/ios/ShieldFraudPluginExample/AppDelegate.mm', { cwd: ROOT });
     }
-    execSync('git add scripts/update-and-run.js', { cwd: ROOT });
+    execSync('git add scripts/update-and-run.js scripts/set-ios-sdk-version.js', { cwd: ROOT });
     console.log('[Shield Script] ✓ Git staging complete. Changes are ready to be committed.');
   } catch (gitErr) {
     console.error('[Shield Script] Git staging failed:', gitErr.message);

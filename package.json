@@ -14,6 +14,8 @@
     "ios",
     "cpp",
     "*.podspec",
+    "Package.swift",
+    "!ios/ShieldFraudPlugin.xcodeproj",
     "!lib/typescript/example",
     "!ios/build",
     "!android/build",
@@ -36,6 +38,7 @@
     "bootstrap": "yarn example && yarn install && yarn example pods",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build",
     "bump": "bash scripts/bump-version.sh",
+    "set-ios-sdk": "node scripts/set-ios-sdk-version.js",
     "publish-all": "node scripts/publish.js",
     "use-fraud": "node scripts/use-plugin.js fraud",
     "use-full": "node scripts/use-plugin.js full",
@@ -80,7 +83,7 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": ">=0.75.0"
   },
   "engines": {
     "node": ">= 16.0.0"
@@ -165,6 +168,14 @@
     "jsSrcsDir": "src",
     "android": {
       "javaPackageName": "com.shieldfraudplugin"
+    },
+    "ios": {
+      "modulesProvider": {
+        "ShieldFraudPlugin": "ShieldFraudPlugin"
+      }
     }
+  },
+  "swiftpmConfig": {
+    "name": "ShieldFraudPlugin"
   }
 }

@@ -19,5 +19,9 @@ Pod::Spec.new do |s|
   # and replaces the legacy `s.dependency "React"` call.
   install_modules_dependencies(s)
 
-  s.dependency "ShieldFraud", "2.2.0"
+  # ShieldFraud iOS is distributed through Swift Package Manager only. The
+  # version is pinned in ios/shield_spm.rb (SHIELD_IOS_SDK_VERSION). This also
+  # links and embeds ShieldFraud in the app for every linkage, without Podfile changes.
+  require File.join(__dir__, "ios", "shield_spm")
+  shield_spm_dependency(s)
 end
