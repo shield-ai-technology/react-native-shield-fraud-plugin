@@ -7,6 +7,7 @@ const {
   assertSpmTagExists,
   bumpLevel,
   bumpVersion,
+  compareVersions,
   readIosSdkVersions,
   setIosSdkVersion,
 } = require('../set-ios-sdk-version');
@@ -177,6 +178,29 @@ describe('setIosSdkVersion', () => {
     expect(pluginVersions().slice(1)).toEqual(['2.7.0', '2.7.0']);
     expect(result.pluginVersions).toEqual(['2.7.0', '2.7.0']);
   });
+
+  test('refuses an SDK downgrade and writes nothing', () => {
+    startAt('2.3.0', '2.7.0');
+    const before = readIosSdkVersions(files);
+    const assertTag = jest.fn();
+    expect(() =>
+      setIosSdkVersion('2.2.1', { files, log: () => {}, assertTag })
+    ).toThrow('--allow-downgrade');
+    expect(assertTag).not.toHaveBeenCalled();
+    expect(readIosSdkVersions(files)).toEqual(before);
+    expect(pluginVersions()).toEqual(['2.7.0', '2.7.0', '2.7.0']);
+  });
+
+  test('downgrades the SDK when --allow-downgrade is passed', () => {
+    startAt('2.3.0', '2.7.0');
+    setIosSdkVersion('2.2.1', {
+      files,
+      log: () => {},
+      assertTag: tagged,
+      allowDowngrade: true,
+    });
+    expect(readIosSdkVersions(files).rubyHelper).toBe('2.2.1');
+  });
 });
 
 describe('bumpLevel / bumpVersion', () => {
@@ -187,6 +211,12 @@ describe('bumpLevel / bumpVersion', () => {
     expect(bumpVersion('2.6.4', 'major')).toBe('3.0.0');
     expect(bumpVersion('2.6.4', 'minor')).toBe('2.7.0');
     expect(bumpVersion('2.6.4', 'patch')).toBe('2.6.5');
+  });
+
+  test('compares versions numerically', () => {
+    expect(compareVersions('2.2.1', '2.3.0')).toBeLessThan(0);
+    expect(compareVersions('2.10.0', '2.9.0')).toBeGreaterThan(0);
+    expect(compareVersions('2.3.0', '2.3.0')).toBe(0);
   });
 });
 

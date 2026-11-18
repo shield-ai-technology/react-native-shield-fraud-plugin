@@ -30,6 +30,7 @@
   ],
   "scripts": {
     "test": "jest",
+    "test:ios-hook": "cd example && bundle exec ruby ../scripts/__tests__/shield_spm_test.rb",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepack": "bob build",

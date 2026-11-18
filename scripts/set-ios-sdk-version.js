@@ -17,6 +17,9 @@
  *
  * The version must already be tagged in shieldfraud-spm; otherwise nothing is
  * written. Pass --skip-tag-check to bypass this (e.g. offline).
+ *
+ * A version lower than the current pin is refused, so an SDK rollback cannot
+ * bump the plugin by accident. Pass --allow-downgrade to do it on purpose.
  */
 const fs = require('fs');
 const path = require('path');
@@ -71,6 +74,12 @@ const SPM_PLUGIN_NAMES = [
   'react-native-shield-full-plugin',
 ];
 
+// Negative when `a` is lower than `b`, 0 when equal, positive when higher.
+const compareVersions = (a, b) => {
+  const [x, y] = [a, b].map((v) => v.split('.').map(Number));
+  return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+};
+
 // 'major' | 'minor' | 'patch': the highest semver part that differs.
 const bumpLevel = (from, to) => {
   const [a, b] = [from, to].map((v) => v.split('.').map(Number));
@@ -115,12 +124,26 @@ const setIosSdkVersion = (
     files = FILES,
     log = console.log,
     checkTag = true,
+    allowDowngrade = false,
     assertTag = assertSpmTagExists,
   } = {}
 ) => {
   if (!VERSION_PATTERN.test(version || '')) {
     throw new Error(
       `iOS SDK version must be in X.Y.Z format (got: ${version}).`
+    );
+  }
+  const previous = fs
+    .readFileSync(files.rubyHelper, 'utf8')
+    .match(RUBY_VERSION)?.[2];
+  if (
+    !allowDowngrade &&
+    VERSION_PATTERN.test(previous || '') &&
+    compareVersions(version, previous) < 0
+  ) {
+    throw new Error(
+      `${version} is lower than the current iOS SDK version ${previous}. ` +
+        'Pass --allow-downgrade to downgrade on purpose.'
     );
   }
   if (checkTag) {
@@ -144,9 +167,6 @@ const setIosSdkVersion = (
   const config = JSON.parse(fs.readFileSync(files.config, 'utf8'));
   config.iosVersion = version;
 
-  const previous = fs
-    .readFileSync(files.rubyHelper, 'utf8')
-    .match(RUBY_VERSION)[2];
   const level = previous === version ? null : bumpLevel(previous, version);
   const packages = level
     ? files.packageJsons.flatMap((file) => {
@@ -196,7 +216,10 @@ if (require.main === module) {
     const args = process.argv.slice(2);
     setIosSdkVersion(
       args.find((arg) => !arg.startsWith('--')),
-      { checkTag: !args.includes('--skip-tag-check') }
+      {
+        checkTag: !args.includes('--skip-tag-check'),
+        allowDowngrade: args.includes('--allow-downgrade'),
+      }
     );
     console.log(
       '\nNext: cd example/ios && bundle exec pod install (refreshes Podfile.lock), then build and run the example.'
@@ -204,7 +227,7 @@ if (require.main === module) {
   } catch (error) {
     console.error(`Error: ${error.message}`);
     console.error(
-      'Usage: node scripts/set-ios-sdk-version.js <X.Y.Z> [--skip-tag-check]'
+      'Usage: node scripts/set-ios-sdk-version.js <X.Y.Z> [--skip-tag-check] [--allow-downgrade]'
     );
     process.exit(1);
   }
@@ -217,6 +240,7 @@ module.exports = {
   assertSpmTagExists,
   bumpLevel,
   bumpVersion,
+  compareVersions,
   readIosSdkVersions,
   setIosSdkVersion,
 };
