@@ -64,6 +64,13 @@ const FILES = {
 
 const PACKAGE_VERSION = /^(\s*"version":\s*")([^"]+)(")/m;
 
+// Only these plugins use the SPM SDK. package.json is a copy of whichever
+// variant is active, so it can hold the alpha manifest, which must not be bumped.
+const SPM_PLUGIN_NAMES = [
+  'react-native-shield-fraud-plugin',
+  'react-native-shield-full-plugin',
+];
+
 // 'major' | 'minor' | 'patch': the highest semver part that differs.
 const bumpLevel = (from, to) => {
   const [a, b] = [from, to].map((v) => v.split('.').map(Number));
@@ -142,8 +149,13 @@ const setIosSdkVersion = (
     .match(RUBY_VERSION)[2];
   const level = previous === version ? null : bumpLevel(previous, version);
   const packages = level
-    ? files.packageJsons.map((file) => {
+    ? files.packageJsons.flatMap((file) => {
         const content = fs.readFileSync(file, 'utf8');
+        const { name } = JSON.parse(content);
+        if (!SPM_PLUGIN_NAMES.includes(name)) {
+          log(`  • ${path.basename(file)} is ${name}; not bumped`);
+          return [];
+        }
         const current = content.match(PACKAGE_VERSION)?.[2];
         if (!VERSION_PATTERN.test(current || '')) {
           throw new Error(
@@ -151,12 +163,14 @@ const setIosSdkVersion = (
           );
         }
         const next = bumpVersion(current, level);
-        return {
-          file,
-          current,
-          next,
-          content: content.replace(PACKAGE_VERSION, `$1${next}$3`),
-        };
+        return [
+          {
+            file,
+            current,
+            next,
+            content: content.replace(PACKAGE_VERSION, `$1${next}$3`),
+          },
+        ];
       })
     : [];
 
@@ -198,6 +212,7 @@ if (require.main === module) {
 
 module.exports = {
   FILES,
+  SPM_PLUGIN_NAMES,
   SPM_URL,
   assertSpmTagExists,
   bumpLevel,

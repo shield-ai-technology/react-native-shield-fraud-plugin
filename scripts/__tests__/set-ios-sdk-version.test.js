@@ -157,6 +157,26 @@ describe('setIosSdkVersion', () => {
       'package.full.json',
     ]);
   });
+
+  test('does not bump package.json when it holds the alpha manifest', () => {
+    startAt('2.2.0', '2.6.0');
+    const activePackage = files.packageJsons[0];
+    fs.copyFileSync(
+      path.join(__dirname, '..', '..', 'package.alpha.json'),
+      activePackage
+    );
+    const alpha = fs.readFileSync(activePackage, 'utf8');
+    const log = jest.fn();
+
+    const result = setIosSdkVersion('2.3.0', { files, log, assertTag: tagged });
+
+    expect(fs.readFileSync(activePackage, 'utf8')).toBe(alpha);
+    expect(log).toHaveBeenCalledWith(
+      '  • package.json is react-native-shield-alpha-plugin; not bumped'
+    );
+    expect(pluginVersions().slice(1)).toEqual(['2.7.0', '2.7.0']);
+    expect(result.pluginVersions).toEqual(['2.7.0', '2.7.0']);
+  });
 });
 
 describe('bumpLevel / bumpVersion', () => {
