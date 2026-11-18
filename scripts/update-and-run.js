@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+/* global Atomics, SharedArrayBuffer */
 const fs = require('fs');
 const http = require('http');
 const net = require('net');
 const path = require('path');
 const { spawn, execFileSync, execSync } = require('child_process');
+const { setIosSdkVersion } = require('./set-ios-sdk-version');
 
 const ROOT = path.join(__dirname, '..');
 const configPath = path.join(ROOT, 'shield-config.json');
@@ -12,6 +14,51 @@ const appBackupPath = path.join(ROOT, 'example', 'src', 'App.tsx.backup');
 const gradlePath = path.join(ROOT, 'android', 'build.gradle');
 const outputPath = path.join(ROOT, 'example', 'shield-output.json');
 const podfileLockPath = path.join(ROOT, 'example', 'ios', 'Podfile.lock');
+const packageResolvedPath = path.join(
+  ROOT,
+  'example',
+  'ios',
+  'ShieldFraudPluginExample.xcworkspace',
+  'xcshareddata',
+  'swiftpm',
+  'Package.resolved'
+);
+
+const workspacePath = path.join(
+  ROOT,
+  'example',
+  'ios',
+  'ShieldFraudPluginExample.xcworkspace'
+);
+
+// Re-resolves Swift packages so Package.resolved matches the new ShieldFraud pin
+// before it is staged. Returns false (and warns) when resolution fails.
+const resolveSpmPackages = ({ run = execFileSync } = {}) => {
+  console.log(
+    '[Shield Script] Resolving Swift packages so Package.resolved matches the new pin...'
+  );
+  try {
+    run(
+      'xcodebuild',
+      [
+        '-resolvePackageDependencies',
+        '-workspace',
+        workspacePath,
+        '-scheme',
+        'ShieldFraudPluginExample',
+      ],
+      { stdio: 'inherit' }
+    );
+    console.log('[Shield Script] ✓ Swift packages resolved.');
+    return true;
+  } catch (err) {
+    console.error(
+      '[Shield Script] Error resolving Swift packages:',
+      err.message
+    );
+    return false;
+  }
+};
 
 const removePodfileLock = () => {
   if (fs.existsSync(podfileLockPath)) {
@@ -19,7 +66,10 @@ const removePodfileLock = () => {
       fs.unlinkSync(podfileLockPath);
       console.log('[Shield Script] ✓ Deleted example/ios/Podfile.lock');
     } catch (err) {
-      console.warn('[Shield Script] Warning: Failed to delete Podfile.lock:', err.message);
+      console.warn(
+        '[Shield Script] Warning: Failed to delete Podfile.lock:',
+        err.message
+      );
     }
   }
 };
@@ -35,7 +85,10 @@ const loadDotenv = () => {
       const index = trimmed.indexOf('=');
       if (index > 0) {
         const key = trimmed.substring(0, index).trim();
-        const val = trimmed.substring(index + 1).trim().replace(/^['"]|['"]$/g, ''); // strip quotes
+        const val = trimmed
+          .substring(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, ''); // strip quotes
         process.env[key] = val;
       }
     }
@@ -50,17 +103,20 @@ let appRestoreNeeded = false;
 let testSiteId;
 let testSecretKey;
 
-const normalizeCommandOutput = output => (output == null ? '' : String(output).trim());
+const normalizeCommandOutput = (output) =>
+  output == null ? '' : String(output).trim();
 
 const runCommand = (command, args, options = {}) =>
-  normalizeCommandOutput(execFileSync(command, args, { encoding: 'utf8', ...options }));
+  normalizeCommandOutput(
+    execFileSync(command, args, { encoding: 'utf8', ...options })
+  );
 
 const readMetroStatus = () =>
-  new Promise(resolve => {
-    const request = http.get('http://127.0.0.1:8081/status', response => {
+  new Promise((resolve) => {
+    const request = http.get('http://127.0.0.1:8081/status', (response) => {
       let body = '';
       response.setEncoding('utf8');
-      response.on('data', chunk => {
+      response.on('data', (chunk) => {
         body += chunk;
       });
       response.on('end', () => resolve(body));
@@ -75,38 +131,52 @@ const isMetroRunning = async ({ probe = readMetroStatus } = {}) =>
 // A suspended (Ctrl+Z) or hung Metro still accepts TCP connections on 8081 but never answers,
 // which leaves the app on a white screen waiting for the bundle.
 const isPortInUse = (port = 8081) =>
-  new Promise(resolve => {
+  new Promise((resolve) => {
     const socket = net.connect(port, '127.0.0.1');
     socket.setTimeout(1000);
-    socket.once('connect', () => { socket.destroy(); resolve(true); });
-    socket.once('timeout', () => { socket.destroy(); resolve(false); });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
     socket.once('error', () => resolve(false));
   });
 
-const parseIosDevices = output => {
+const parseIosDevices = (output) => {
   const devices = JSON.parse(output).devices || {};
   return Object.values(devices)
     .flat()
-    .filter(device => device.isAvailable !== false);
+    .filter((device) => device.isAvailable !== false);
 };
 
 const ensureIosSimulator = ({ run = runCommand, log = console.log } = {}) => {
   try {
     run('xcrun', ['--find', 'simctl']);
   } catch (error) {
-    throw new Error('Xcode Simulator tools are unavailable. Install Xcode and run `xcode-select --install`.');
+    throw new Error(
+      'Xcode Simulator tools are unavailable. Install Xcode and run `xcode-select --install`.'
+    );
   }
 
   let devices;
   try {
-    devices = parseIosDevices(run('xcrun', ['simctl', 'list', 'devices', 'available', '--json']));
+    devices = parseIosDevices(
+      run('xcrun', ['simctl', 'list', 'devices', 'available', '--json'])
+    );
   } catch (error) {
     throw new Error(`Unable to list iOS simulators: ${error.message}`);
   }
 
-  const simulator = devices.find(device => device.state === 'Booted') || devices.find(device => device.state === 'Shutdown');
+  const simulator =
+    devices.find((device) => device.state === 'Booted') ||
+    devices.find((device) => device.state === 'Shutdown');
   if (!simulator) {
-    throw new Error('No available iOS simulator found. Create one in Xcode > Settings > Platforms.');
+    throw new Error(
+      'No available iOS simulator found. Create one in Xcode > Settings > Platforms.'
+    );
   }
 
   try {
@@ -117,20 +187,28 @@ const ensureIosSimulator = ({ run = runCommand, log = console.log } = {}) => {
     }
     run('open', ['-a', 'Simulator'], { stdio: 'ignore' });
   } catch (error) {
-    throw new Error(`Unable to boot and open iOS simulator ${simulator.name}: ${error.message}`);
+    throw new Error(
+      `Unable to boot and open iOS simulator ${simulator.name}: ${error.message}`
+    );
   }
 
   log(`[Shield Script] ✓ iOS simulator booted and opened: ${simulator.name}`);
   return { udid: simulator.udid, name: simulator.name };
 };
 
-const connectedAndroidEmulator = devicesOutput =>
+const connectedAndroidEmulator = (devicesOutput) =>
   devicesOutput
     .split('\n')
-    .map(line => line.trim().split(/\s+/))
-    .find(([serial, state]) => /^emulator-\d+$/.test(serial) && state === 'device')?.[0];
+    .map((line) => line.trim().split(/\s+/))
+    .find(
+      ([serial, state]) => /^emulator-\d+$/.test(serial) && state === 'device'
+    )?.[0];
 
-const waitForAndroidBoot = ({ run = runCommand, sleep = milliseconds => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds) } = {}) => {
+const waitForAndroidBoot = ({
+  run = runCommand,
+  sleep = (milliseconds) =>
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds),
+} = {}) => {
   run('adb', ['wait-for-device']);
   for (let attempt = 0; attempt < 60; attempt += 1) {
     if (run('adb', ['shell', 'getprop', 'sys.boot_completed']) === '1') return;
@@ -139,12 +217,19 @@ const waitForAndroidBoot = ({ run = runCommand, sleep = milliseconds => Atomics.
   throw new Error('Android emulator did not finish booting within 60 seconds.');
 };
 
-const ensureAndroidEmulator = ({ run = runCommand, spawn: spawnProcess = spawn, waitForBoot = waitForAndroidBoot, log = console.log } = {}) => {
+const ensureAndroidEmulator = ({
+  run = runCommand,
+  spawn: spawnProcess = spawn,
+  waitForBoot = waitForAndroidBoot,
+  log = console.log,
+} = {}) => {
   let serial;
   try {
     serial = connectedAndroidEmulator(run('adb', ['devices']));
   } catch (error) {
-    throw new Error('ADB is unavailable. Install Android SDK Platform-Tools and add `adb` to PATH.');
+    throw new Error(
+      'ADB is unavailable. Install Android SDK Platform-Tools and add `adb` to PATH.'
+    );
   }
 
   if (serial) {
@@ -156,14 +241,21 @@ const ensureAndroidEmulator = ({ run = runCommand, spawn: spawnProcess = spawn, 
   try {
     avd = run('emulator', ['-list-avds']).split('\n').find(Boolean);
   } catch (error) {
-    throw new Error('Android Emulator is unavailable. Install Android Emulator tools and add `emulator` to PATH.');
+    throw new Error(
+      'Android Emulator is unavailable. Install Android Emulator tools and add `emulator` to PATH.'
+    );
   }
   if (!avd) {
-    throw new Error('No Android Virtual Device found. Create one in Android Studio > Device Manager.');
+    throw new Error(
+      'No Android Virtual Device found. Create one in Android Studio > Device Manager.'
+    );
   }
 
   log(`[Shield Script] Booting Android emulator: ${avd}...`);
-  const emulatorProcess = spawnProcess('emulator', [`@${avd}`], { detached: true, stdio: 'ignore' });
+  const emulatorProcess = spawnProcess('emulator', [`@${avd}`], {
+    detached: true,
+    stdio: 'ignore',
+  });
   emulatorProcess.unref();
   waitForBoot({ run });
   log(`[Shield Script] ✓ Android emulator booted and opened: ${avd}`);
@@ -172,7 +264,7 @@ const ensureAndroidEmulator = ({ run = runCommand, spawn: spawnProcess = spawn, 
 
 // `--platform=<value>` on the command line overrides shield-config.json's platform.
 const resolvePlatform = (argv, configPlatform) => {
-  const platformArg = argv.find(arg => arg.startsWith('--platform='));
+  const platformArg = argv.find((arg) => arg.startsWith('--platform='));
   return platformArg ? platformArg.slice('--platform='.length) : configPlatform;
 };
 
@@ -189,14 +281,20 @@ const restoreAppFile = () => {
         const backupContent = fs.readFileSync(appBackupPath, 'utf8');
         if (backupContent.includes('SHIELD_SITE_ID')) {
           fs.copyFileSync(appBackupPath, appPath);
-          console.log('\n[Shield Script] ✓ Restored App.tsx from backup. Credentials removed.');
+          console.log(
+            '\n[Shield Script] ✓ Restored App.tsx from backup. Credentials removed.'
+          );
         } else {
-          console.log('\n[Shield Script] Warning: Backup file was dirty. Using git checkout to restore App.tsx.');
+          console.log(
+            '\n[Shield Script] Warning: Backup file was dirty. Using git checkout to restore App.tsx.'
+          );
           execSync(`git checkout -- ${appPath}`, { cwd: ROOT });
         }
         fs.unlinkSync(appBackupPath);
       } else {
-        console.log('\n[Shield Script] Warning: Backup file not found. Using git checkout to restore App.tsx.');
+        console.log(
+          '\n[Shield Script] Warning: Backup file not found. Using git checkout to restore App.tsx.'
+        );
         execSync(`git checkout -- ${appPath}`, { cwd: ROOT });
       }
       appRestoreNeeded = false;
@@ -217,7 +315,9 @@ process.on('SIGINT', () => {
   console.log('\n[Shield Script] Interrupted by user.');
   restoreAppFile();
   if (metroProcess) {
-    try { metroProcess.kill(); } catch (err) {}
+    try {
+      metroProcess.kill();
+    } catch (err) {}
   }
   process.exit(1);
 });
@@ -226,7 +326,9 @@ process.on('SIGTERM', () => {
   console.log('\n[Shield Script] Terminated.');
   restoreAppFile();
   if (metroProcess) {
-    try { metroProcess.kill(); } catch (err) {}
+    try {
+      metroProcess.kill();
+    } catch (err) {}
   }
   process.exit(1);
 });
@@ -234,17 +336,27 @@ process.on('SIGTERM', () => {
 process.on('exit', () => {
   restoreAppFile();
   if (metroProcess) {
-    try { metroProcess.kill(); } catch (err) {}
+    try {
+      metroProcess.kill();
+    } catch (err) {}
   }
 });
 
 const verifyPlatform = async (platformKey) => {
   const isIos = platformKey.startsWith('ios');
-  const linkageType = platformKey.includes('static') ? 'static' : (platformKey.includes('dynamic') ? 'dynamic' : null);
+  const linkageType = platformKey.includes('static')
+    ? 'static'
+    : platformKey.includes('dynamic')
+    ? 'dynamic'
+    : null;
   const platformName = isIos ? 'ios' : 'android';
-  
+
   console.log(`\n======================================================`);
-  console.log(`🚀 Starting verification for platform: ${platformName.toUpperCase()}${linkageType ? ` (${linkageType.toUpperCase()})` : ''}`);
+  console.log(
+    `🚀 Starting verification for platform: ${platformName.toUpperCase()}${
+      linkageType ? ` (${linkageType.toUpperCase()})` : ''
+    }`
+  );
   console.log(`======================================================\n`);
 
   // Environment Setup
@@ -278,10 +390,18 @@ const verifyPlatform = async (platformKey) => {
     appRestoreNeeded = true;
 
     let appContent = fs.readFileSync(appPath, 'utf8');
-    appContent = appContent.replace(/['"]SHIELD_SITE_ID['"]/g, `'${testSiteId}'`);
-    appContent = appContent.replace(/['"]SHIELD_SECRET_KEY['"]/g, `'${testSecretKey}'`);
+    appContent = appContent.replace(
+      /['"]SHIELD_SITE_ID['"]/g,
+      `'${testSiteId}'`
+    );
+    appContent = appContent.replace(
+      /['"]SHIELD_SECRET_KEY['"]/g,
+      `'${testSecretKey}'`
+    );
     fs.writeFileSync(appPath, appContent);
-    console.log('[Shield Script] ✓ Temporarily injected test credentials into App.tsx');
+    console.log(
+      '[Shield Script] ✓ Temporarily injected test credentials into App.tsx'
+    );
   } else {
     throw new Error(`example/src/App.tsx not found.`);
   }
@@ -295,18 +415,23 @@ const verifyPlatform = async (platformKey) => {
       execSync('npx react-native codegen --platform ios --outputPath ios', {
         cwd: path.join(ROOT, 'example'),
         stdio: 'inherit',
-        env: customEnv
+        env: customEnv,
       });
     } catch (codegenErr) {
-      console.warn('[Shield Script] Warning: react-native codegen failed:', codegenErr.message);
+      console.warn(
+        '[Shield Script] Warning: react-native codegen failed:',
+        codegenErr.message
+      );
     }
 
-    console.log(`[Shield Script] Running pod install in example/ios directory with USE_FRAMEWORKS=${linkageType}...`);
+    console.log(
+      `[Shield Script] Running pod install in example/ios directory with USE_FRAMEWORKS=${linkageType}...`
+    );
     try {
       execSync('bundle exec pod install --repo-update', {
         cwd: path.join(ROOT, 'example', 'ios'),
         stdio: 'inherit',
-        env: customEnv
+        env: customEnv,
       });
       console.log('[Shield Script] ✓ pod install completed successfully.');
     } catch (err) {
@@ -319,14 +444,20 @@ const verifyPlatform = async (platformKey) => {
   let nativeLogProcess = null;
   if (platformName === 'ios') {
     console.log('[Shield Script] Starting iOS simulator syslog observer...');
-    nativeLogProcess = spawn('xcrun', ['simctl', 'spawn', 'booted', 'log', 'stream', '--level', 'info'], {
-      shell: true
-    });
+    nativeLogProcess = spawn(
+      'xcrun',
+      ['simctl', 'spawn', 'booted', 'log', 'stream', '--level', 'info'],
+      {
+        shell: true,
+      }
+    );
   } else if (platformName === 'android') {
     console.log('[Shield Script] Starting Android logcat observer...');
-    try { execSync('adb logcat -c'); } catch (e) {}
+    try {
+      execSync('adb logcat -c');
+    } catch (e) {}
     nativeLogProcess = spawn('adb', ['logcat'], {
-      shell: true
+      shell: true,
     });
   }
 
@@ -337,16 +468,19 @@ const verifyPlatform = async (platformKey) => {
 
     const onLogData = (data, source) => {
       const logStr = data.toString();
-      
+
       // Print Metro logs to console so user can see bundle logs, but filter noisy syslog to only show Shield-related logs
       if (source === 'metro') {
         process.stdout.write(logStr);
       } else if (source === 'native') {
-        if (logStr.toLowerCase().includes('shield') || logStr.toLowerCase().includes('session')) {
+        if (
+          logStr.toLowerCase().includes('shield') ||
+          logStr.toLowerCase().includes('session')
+        ) {
           process.stdout.write(`[Device Logs] ${logStr}`);
         }
       }
-      
+
       logBuffer += logStr;
 
       // Keep last 20KB to avoid memory growth
@@ -354,18 +488,33 @@ const verifyPlatform = async (platformKey) => {
         logBuffer = logBuffer.substring(logBuffer.length - 20000);
       }
 
-      if (logStr.includes('[Shield] onSuccess:') || logStr.includes('[Shield] sessionId:') || logStr.toLowerCase().includes('session_id') || logStr.toLowerCase().includes('session id')) {
+      if (
+        logStr.includes('[Shield] onSuccess:') ||
+        logStr.includes('[Shield] sessionId:') ||
+        logStr.toLowerCase().includes('session_id') ||
+        logStr.toLowerCase().includes('session id')
+      ) {
         if (!deviceIntelligenceDetected) {
           // Check if we can find the session ID (32 hex characters)
           let sessionId = 'Unknown';
-          const match = logBuffer.match(/(?:\[Shield\] sessionId|sessionId|session id).*?['"]?([a-f0-9]{32})['"]?/i);
+          const match = logBuffer.match(
+            /(?:\[Shield\] sessionId|sessionId|session id).*?['"]?([a-f0-9]{32})['"]?/i
+          );
           if (match) {
             sessionId = match[1];
             deviceIntelligenceDetected = true;
-            console.log('\n======================================================');
-            console.log(`🎉 SUCCESS: Shield Device Intelligence Detected for ${platformName.toUpperCase()}${linkageType ? ` (${linkageType.toUpperCase()})` : ''}!`);
+            console.log(
+              '\n======================================================'
+            );
+            console.log(
+              `🎉 SUCCESS: Shield Device Intelligence Detected for ${platformName.toUpperCase()}${
+                linkageType ? ` (${linkageType.toUpperCase()})` : ''
+              }!`
+            );
             console.log(`🔑 Session ID: ${sessionId}`);
-            console.log('======================================================\n');
+            console.log(
+              '======================================================\n'
+            );
             cleanupVerification();
             resolve(sessionId);
           }
@@ -375,14 +524,20 @@ const verifyPlatform = async (platformKey) => {
 
     const cleanupVerification = () => {
       if (metroProcess && metroProcess.stdout) {
-        metroProcess.stdout.removeListener('data', (d) => onLogData(d, 'metro'));
+        metroProcess.stdout.removeListener('data', (d) =>
+          onLogData(d, 'metro')
+        );
       }
       if (nativeLogProcess) {
-        try { nativeLogProcess.kill(); } catch (e) {}
+        try {
+          nativeLogProcess.kill();
+        } catch (e) {}
       }
       restoreAppFile();
       if (runProcess) {
-        try { runProcess.kill(); } catch (e) {}
+        try {
+          runProcess.kill();
+        } catch (e) {}
       }
     };
 
@@ -394,17 +549,24 @@ const verifyPlatform = async (platformKey) => {
     }
 
     // D. Uninstall existing app from device/simulator for clean environment
-    console.log(`[Shield Script] Cleaning up previous installations of the app...`);
+    console.log(
+      `[Shield Script] Cleaning up previous installations of the app...`
+    );
     if (platformName === 'ios') {
       try {
-        execSync('xcrun simctl uninstall booted org.reactjs.native.example.ShieldFraudPluginExample', { stdio: 'ignore' });
+        execSync(
+          'xcrun simctl uninstall booted org.reactjs.native.example.ShieldFraudPluginExample',
+          { stdio: 'ignore' }
+        );
         console.log('[Shield Script] ✓ Uninstalled existing iOS app.');
       } catch (e) {
         // ignore if not installed
       }
     } else if (platformName === 'android') {
       try {
-        execSync('adb uninstall com.shieldfraudpluginexample', { stdio: 'ignore' });
+        execSync('adb uninstall com.shieldfraudpluginexample', {
+          stdio: 'ignore',
+        });
         console.log('[Shield Script] ✓ Uninstalled existing Android app.');
       } catch (e) {
         // ignore if not installed
@@ -412,23 +574,29 @@ const verifyPlatform = async (platformKey) => {
     }
 
     // E. Run the React Native application
-    console.log(`[Shield Script] Building and launching sample app on ${platformName}...`);
+    console.log(
+      `[Shield Script] Building and launching sample app on ${platformName}...`
+    );
     const runArgs = createRunArgs(platformName, target.udid);
 
     runProcess = spawn('npx', runArgs, {
       cwd: path.join(ROOT, 'example'),
       shell: true,
       stdio: 'inherit',
-      env: customEnv
+      env: customEnv,
     });
 
     runProcess.on('exit', (code) => {
       if (code !== 0) {
-        console.error(`[Shield Script] Build/run command failed with exit code ${code}`);
+        console.error(
+          `[Shield Script] Build/run command failed with exit code ${code}`
+        );
         cleanupVerification();
         reject(new Error(`Build/run failed for platform ${platformKey}`));
       } else {
-        console.log(`[Shield Script] App built and launched. Watching logs for ${platformKey}...`);
+        console.log(
+          `[Shield Script] App built and launched. Watching logs for ${platformKey}...`
+        );
       }
     });
   });
@@ -449,7 +617,10 @@ const main = async () => {
       fs.unlinkSync(outputPath);
       console.log('[Shield Script] ✓ Cleared existing shield-output.json');
     } catch (err) {
-      console.warn('[Shield Script] Warning: failed to clear shield-output.json:', err.message);
+      console.warn(
+        '[Shield Script] Warning: failed to clear shield-output.json:',
+        err.message
+      );
     }
   }
 
@@ -469,12 +640,14 @@ const main = async () => {
 
   const { androidVersion, iosVersion } = config;
   const platform = resolvePlatform(process.argv.slice(2), config.platform);
-  
+
   const shouldUpdateAndroid = !!androidVersion;
   const shouldUpdateIos = !!iosVersion;
 
   if (!shouldUpdateAndroid && !shouldUpdateIos) {
-    console.error('Error: Configuration must specify at least androidVersion or iosVersion.');
+    console.error(
+      'Error: Configuration must specify at least androidVersion or iosVersion.'
+    );
     process.exit(1);
   }
 
@@ -491,7 +664,9 @@ const main = async () => {
         `com.shield.android:shield-fraud:${androidVersion}`
       );
       fs.writeFileSync(gradlePath, gradleContent);
-      console.log(`[Shield Script] ✓ Updated android/build.gradle to version ${androidVersion}`);
+      console.log(
+        `[Shield Script] ✓ Updated android/build.gradle to version ${androidVersion}`
+      );
     } else {
       console.warn('[Shield Script] Warning: android/build.gradle not found.');
     }
@@ -500,23 +675,13 @@ const main = async () => {
   }
 
   if (shouldUpdateIos) {
-    const podspecFiles = [
-      'react-native-shield-fraud-plugin.podspec',
-      'react-native-shield-full-plugin.podspec'
-    ];
-    podspecFiles.forEach(specName => {
-      const specPath = path.join(ROOT, specName);
-      if (fs.existsSync(specPath)) {
-        let specContent = fs.readFileSync(specPath, 'utf8');
-        specContent = specContent.replace(
-          /(s\.dependency\s+["']ShieldFraud["'],\s+["'])\d+\.\d+\.\d+(["'])/g,
-          `$1${iosVersion}$2`
-        );
-        fs.writeFileSync(specPath, specContent);
-        console.log(`[Shield Script] ✓ Updated ${specName} to version ${iosVersion}`);
-      } else {
-        console.warn(`[Shield Script] Warning: ${specName} not found.`);
-      }
+    // iOS SDK 2.3.0+ ships through SPM only; the version lives in ios/shield_spm.rb
+    // (read by both podspecs) and Package.swift.
+    console.log(
+      `[Shield Script] Setting ShieldFraud iOS SPM version to ${iosVersion}...`
+    );
+    setIosSdkVersion(iosVersion, {
+      log: (line) => console.log(`[Shield Script]${line}`),
     });
     removePodfileLock();
   } else {
@@ -526,7 +691,9 @@ const main = async () => {
   // Ensure node modules are fully installed using frozen lockfile as requested
   console.log('[Shield Script] Running yarn install --frozen-lockfile...');
   try {
-    execSync('yarn --cwd example install --frozen-lockfile', { stdio: 'inherit' });
+    execSync('yarn --cwd example install --frozen-lockfile', {
+      stdio: 'inherit',
+    });
     console.log('[Shield Script] ✓ yarn install complete.');
   } catch (err) {
     console.error('[Shield Script] Error running yarn install:', err.message);
@@ -565,26 +732,30 @@ const main = async () => {
 
   // 4. Reuse a running Metro Bundler or start one owned by this script.
   if (await isMetroRunning()) {
-    console.log('[Shield Script] ✓ Metro Bundler is already running on port 8081. Reusing it.');
+    console.log(
+      '[Shield Script] ✓ Metro Bundler is already running on port 8081. Reusing it.'
+    );
   } else if (await isPortInUse(8081)) {
     throw new Error(
       'Port 8081 is in use but Metro is not responding (a suspended or hung Metro from a previous run?). ' +
-      'Find it with `lsof -nP -iTCP:8081 -sTCP:LISTEN`, kill it, then re-run.'
+        'Find it with `lsof -nP -iTCP:8081 -sTCP:LISTEN`, kill it, then re-run.'
     );
   } else {
     console.log('[Shield Script] Starting Metro Bundler in background...');
     metroProcess = spawn('npx', ['react-native', 'start', '--reset-cache'], {
       cwd: path.join(ROOT, 'example'),
       shell: true,
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
 
     metroProcess.stderr.on('data', (data) => {
       process.stderr.write(data.toString());
     });
 
-    console.log('[Shield Script] Waiting 5 seconds for Metro Bundler to start...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(
+      '[Shield Script] Waiting 5 seconds for Metro Bundler to start...'
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
   // 5. Verify target platforms sequentially
@@ -594,9 +765,14 @@ const main = async () => {
       const sessionId = await verifyPlatform(plat);
       verificationResults[plat] = sessionId;
     } catch (err) {
-      console.error(`[Shield Script] Verification failed for platform ${plat.toUpperCase()}:`, err.message);
+      console.error(
+        `[Shield Script] Verification failed for platform ${plat.toUpperCase()}:`,
+        err.message
+      );
       if (metroProcess) {
-        try { metroProcess.kill(); } catch (e) {}
+        try {
+          metroProcess.kill();
+        } catch (e) {}
       }
       process.exit(1);
     }
@@ -605,41 +781,93 @@ const main = async () => {
   // Write output results file
   try {
     fs.writeFileSync(outputPath, JSON.stringify(verificationResults, null, 2));
-    console.log(`[Shield Script] ✓ Verification results saved to ${outputPath}`);
+    console.log(
+      `[Shield Script] ✓ Verification results saved to ${outputPath}`
+    );
   } catch (outErr) {
-    console.error(`[Shield Script] Failed to write shield-output.json:`, outErr.message);
+    console.error(
+      `[Shield Script] Failed to write shield-output.json:`,
+      outErr.message
+    );
   }
 
   // 6. Stage changes in Git on overall success
-  console.log('[Shield Script] All target platforms verified successfully! Staging updates in git...');
+  console.log(
+    '[Shield Script] All target platforms verified successfully! Staging updates in git...'
+  );
   try {
     if (shouldUpdateAndroid) {
       execSync('git add android/build.gradle', { cwd: ROOT });
     }
     if (shouldUpdateIos) {
-      execSync('git add react-native-shield-fraud-plugin.podspec', { cwd: ROOT });
-      execSync('git add react-native-shield-full-plugin.podspec', { cwd: ROOT });
+      // Includes the plugin versions that setIosSdkVersion bumps on an SDK change.
+      execSync(
+        'git add ios/shield_spm.rb Package.swift package.json package.fraud.json package.full.json',
+        { cwd: ROOT }
+      );
       if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'Podfile.lock'))) {
         execSync('git add example/ios/Podfile.lock', { cwd: ROOT });
+      }
+      // Xcode's SPM lock file pins the exact ShieldFraud version; keep it in step.
+      if (!resolveSpmPackages()) {
+        console.warn(
+          '[Shield Script] Warning: Package.resolved not staged; it may not match the new pin.'
+        );
+      } else if (fs.existsSync(packageResolvedPath)) {
+        execSync(`git add "${packageResolvedPath}"`, { cwd: ROOT });
       }
     }
     // Stage config and helper fixes
     execSync('git add shield-config.json', { cwd: ROOT });
-    if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'ShieldFraudPluginExample', 'Info.plist'))) {
-      execSync('git add example/ios/ShieldFraudPluginExample/Info.plist', { cwd: ROOT });
+    if (
+      fs.existsSync(
+        path.join(
+          ROOT,
+          'example',
+          'ios',
+          'ShieldFraudPluginExample',
+          'Info.plist'
+        )
+      )
+    ) {
+      execSync('git add example/ios/ShieldFraudPluginExample/Info.plist', {
+        cwd: ROOT,
+      });
     }
-    if (fs.existsSync(path.join(ROOT, 'example', 'ios', 'ShieldFraudPluginExample', 'AppDelegate.mm'))) {
-      execSync('git add example/ios/ShieldFraudPluginExample/AppDelegate.mm', { cwd: ROOT });
+    if (
+      fs.existsSync(
+        path.join(
+          ROOT,
+          'example',
+          'ios',
+          'ShieldFraudPluginExample',
+          'AppDelegate.mm'
+        )
+      )
+    ) {
+      execSync('git add example/ios/ShieldFraudPluginExample/AppDelegate.mm', {
+        cwd: ROOT,
+      });
     }
-    execSync('git add scripts/update-and-run.js', { cwd: ROOT });
-    console.log('[Shield Script] ✓ Git staging complete. Changes are ready to be committed.');
+    execSync(
+      'git add scripts/update-and-run.js scripts/set-ios-sdk-version.js',
+      { cwd: ROOT }
+    );
+    console.log(
+      '[Shield Script] ✓ Git staging complete. Changes are ready to be committed.'
+    );
   } catch (gitErr) {
     console.error('[Shield Script] Git staging failed:', gitErr.message);
   }
 
   // Open the output file for the user
   try {
-    const openCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
+    const openCmd =
+      process.platform === 'win32'
+        ? 'start'
+        : process.platform === 'darwin'
+        ? 'open'
+        : 'xdg-open';
     execSync(`${openCmd} "${outputPath}"`);
     console.log('[Shield Script] ✓ Opened shield-output.json for viewing.');
   } catch (err) {
@@ -648,7 +876,9 @@ const main = async () => {
 
   // Stop Metro
   if (metroProcess) {
-    try { metroProcess.kill(); } catch (e) {}
+    try {
+      metroProcess.kill();
+    } catch (e) {}
   }
 
   console.log('[Shield Script] Finished successfully.');
@@ -656,11 +886,13 @@ const main = async () => {
 };
 
 if (require.main === module) {
-  main().catch(err => {
+  main().catch((err) => {
     console.error('[Shield Script] Unexpected error:', err.message);
     restoreAppFile();
     if (metroProcess) {
-      try { metroProcess.kill(); } catch (e) {}
+      try {
+        metroProcess.kill();
+      } catch (e) {}
     }
     process.exit(1);
   });
@@ -676,5 +908,6 @@ module.exports = {
   normalizeCommandOutput,
   podfileLockPath,
   removePodfileLock,
+  resolveSpmPackages,
   resolvePlatform,
 };

@@ -157,7 +157,7 @@ describe('Podspec metadata', () => {
     );
   });
 
-  it('requires ShieldFraud 2.0.0 or newer in both package variants', () => {
+  it('resolves ShieldFraud through SPM only in both package variants', () => {
     const fraudPodspec = fs.readFileSync(
       path.join(__dirname, '../../react-native-shield-fraud-plugin.podspec'),
       'utf8'
@@ -166,9 +166,51 @@ describe('Podspec metadata', () => {
       path.join(__dirname, '../../react-native-shield-full-plugin.podspec'),
       'utf8'
     );
+    const helper = fs.readFileSync(
+      path.join(__dirname, '../../ios/shield_spm.rb'),
+      'utf8'
+    );
 
-    expect(fraudPodspec).toContain('s.dependency "ShieldFraud", ">= 2.0.0"');
-    expect(fullPodspec).toContain('s.dependency "ShieldFraud", ">= 2.0.0"');
+    for (const podspec of [fraudPodspec, fullPodspec]) {
+      expect(podspec).toContain('shield_spm_dependency(s)');
+      expect(podspec).not.toContain('s.dependency "ShieldFraud"');
+      // The version is pinned once, in ios/shield_spm.rb.
+      expect(podspec).not.toMatch(/\d+\.\d+\.\d+/);
+    }
+    expect(helper).toContain(
+      "'https://github.com/shield-ai-technology/shieldfraud-spm.git'"
+    );
+    expect(helper).toContain(
+      "requirement: { kind: 'exactVersion', version: SHIELD_IOS_SDK_VERSION }"
+    );
+    expect(helper).toContain("products: ['ShieldFraud']");
+  });
+
+  it('pins the same ShieldFraud iOS SDK version in CocoaPods, SwiftPM and shield-config.json', () => {
+    const { readIosSdkVersions } = require('../../scripts/set-ios-sdk-version');
+    const versions = readIosSdkVersions();
+    expect(versions.rubyHelper).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(versions).toEqual({
+      rubyHelper: versions.rubyHelper,
+      packageSwift: versions.rubyHelper,
+      config: versions.rubyHelper,
+    });
+  });
+
+  it('requires React Native 0.75+ for the SPM-based variants', () => {
+    for (const manifest of [
+      'package.json',
+      'package.fraud.json',
+      'package.full.json',
+    ]) {
+      const pkg = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../..', manifest), 'utf8')
+      );
+      expect(pkg.peerDependencies['react-native']).toBe('>=0.75.0');
+      // SwiftPM rejects the umbrella header when a directory sits beside it.
+      expect(pkg.files).toContain('Package.swift');
+      expect(pkg.files).toContain('!ios/ShieldFraudPlugin.xcodeproj');
+    }
   });
 
   it('does not force C++ module flags on static-library consumers', () => {

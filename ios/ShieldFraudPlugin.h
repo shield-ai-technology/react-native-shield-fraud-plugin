@@ -3,7 +3,11 @@
 // New Architecture: conform to the codegen-generated spec protocol.
 // RCTEventEmitter is still used as the base so that sendEventWithName: works.
 #import <React/RCTEventEmitter.h>
+#if __has_include("RNShieldFraudPluginSpec.h")
 #import "RNShieldFraudPluginSpec.h"
+#else
+#import <RNShieldFraudPluginSpec/RNShieldFraudPluginSpec.h>
+#endif
 
 @interface ShieldFraudPlugin : RCTEventEmitter <NativeShieldFraudPluginSpec>
 #else

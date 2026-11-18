@@ -8,6 +8,7 @@ const {
   podfileLockPath,
   removePodfileLock,
   resolvePlatform,
+  resolveSpmPackages,
 } = require('../update-and-run');
 
 describe('platform selection', () => {
@@ -22,7 +23,9 @@ describe('platform selection', () => {
 
 describe('portable device preparation', () => {
   test('loads shield configuration from the plugin root', () => {
-    expect(configPath).toBe(require('path').join(__dirname, '..', '..', 'shield-config.json'));
+    expect(configPath).toBe(
+      require('path').join(__dirname, '..', '..', 'shield-config.json')
+    );
   });
 
   test('normalizes commands with no output', () => {
@@ -36,7 +39,12 @@ describe('portable device preparation', () => {
         return JSON.stringify({
           devices: {
             'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-              { name: 'iPhone 16', udid: 'BOOTED-UDID', state: 'Booted', isAvailable: true },
+              {
+                name: 'iPhone 16',
+                udid: 'BOOTED-UDID',
+                state: 'Booted',
+                isAvailable: true,
+              },
             ],
           },
         });
@@ -48,7 +56,9 @@ describe('portable device preparation', () => {
     const result = ensureIosSimulator({ run, log });
 
     expect(result).toEqual({ udid: 'BOOTED-UDID', name: 'iPhone 16' });
-    expect(run).toHaveBeenCalledWith('open', ['-a', 'Simulator'], { stdio: 'ignore' });
+    expect(run).toHaveBeenCalledWith('open', ['-a', 'Simulator'], {
+      stdio: 'ignore',
+    });
     expect(log).toHaveBeenCalledWith(
       expect.stringContaining('iOS simulator booted and opened: iPhone 16')
     );
@@ -56,8 +66,10 @@ describe('portable device preparation', () => {
 
   test('boots an available Android AVD and reports it opened', () => {
     const run = jest.fn((command, args) => {
-      if (command === 'adb' && args[0] === 'devices') return 'List of devices attached\n';
-      if (command === 'emulator' && args[0] === '-list-avds') return 'Pixel_API_35\n';
+      if (command === 'adb' && args[0] === 'devices')
+        return 'List of devices attached\n';
+      if (command === 'emulator' && args[0] === '-list-avds')
+        return 'Pixel_API_35\n';
       return '';
     });
     const spawn = jest.fn(() => ({ unref: jest.fn() }));
@@ -73,7 +85,9 @@ describe('portable device preparation', () => {
       expect.objectContaining({ detached: true, stdio: 'ignore' })
     );
     expect(log).toHaveBeenCalledWith(
-      expect.stringContaining('Android emulator booted and opened: Pixel_API_35')
+      expect.stringContaining(
+        'Android emulator booted and opened: Pixel_API_35'
+      )
     );
     expect(waitForBoot).toHaveBeenCalledWith({ run });
   });
@@ -102,7 +116,16 @@ describe('Metro lifecycle', () => {
 
 describe('Podfile.lock lifecycle', () => {
   test('resolves podfileLockPath in example/ios directory', () => {
-    expect(podfileLockPath).toBe(require('path').join(__dirname, '..', '..', 'example', 'ios', 'Podfile.lock'));
+    expect(podfileLockPath).toBe(
+      require('path').join(
+        __dirname,
+        '..',
+        '..',
+        'example',
+        'ios',
+        'Podfile.lock'
+      )
+    );
   });
 
   test('removes Podfile.lock when it exists', () => {
@@ -114,7 +137,9 @@ describe('Podfile.lock lifecycle', () => {
     removePodfileLock();
 
     expect(unlinkSpy).toHaveBeenCalledWith(podfileLockPath);
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Deleted example/ios/Podfile.lock'));
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Deleted example/ios/Podfile.lock')
+    );
 
     existsSpy.mockRestore();
     unlinkSpy.mockRestore();
@@ -122,3 +147,29 @@ describe('Podfile.lock lifecycle', () => {
   });
 });
 
+describe('Swift package resolution', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  test('resolves packages for the example workspace and scheme', () => {
+    const run = jest.fn();
+    expect(resolveSpmPackages({ run })).toBe(true);
+    const [command, args] = run.mock.calls[0];
+    expect(command).toBe('xcodebuild');
+    expect(args[0]).toBe('-resolvePackageDependencies');
+    expect(args[args.indexOf('-workspace') + 1]).toMatch(
+      /example[\\/]ios[\\/]ShieldFraudPluginExample\.xcworkspace$/
+    );
+    expect(args[args.indexOf('-scheme') + 1]).toBe('ShieldFraudPluginExample');
+  });
+
+  test('reports failure instead of throwing', () => {
+    const run = () => {
+      throw new Error('xcodebuild failed');
+    };
+    expect(resolveSpmPackages({ run })).toBe(false);
+  });
+});

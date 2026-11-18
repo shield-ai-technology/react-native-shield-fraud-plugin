@@ -1,0 +1,15 @@
+{
+  "originHash" : "1f1338ec6cc49fc19739f0dc14cf5ed415a581100fc7e8eb9c6a537edc5e83fb",
+  "pins" : [
+    {
+      "identity" : "shieldfraud-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/shield-ai-technology/shieldfraud-spm.git",
+      "state" : {
+        "revision" : "a1f001091006ed199686260b376e30fe261bd2b0",
+        "version" : "2.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}
